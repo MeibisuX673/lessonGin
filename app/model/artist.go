@@ -1,9 +1,8 @@
 package model
 
-import "gorm.io/gorm"
 
 type Artist struct {
-	gorm.Model
+	ID int	`gorm:"primaryKey"`
 	Name string `gorm:"varchar(255)"`
-	Age  uint16
+	Age  int
 }

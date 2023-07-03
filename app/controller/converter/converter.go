@@ -1,15 +1,16 @@
 package converter
 
 import (
-	model2 "github.com/MeibisuX673/lessonGin/app/controller/model"
+	responseArtist "github.com/MeibisuX673/lessonGin/app/controller/model"
 	"github.com/MeibisuX673/lessonGin/app/model"
 )
 
-func ArtistModelToResponse(artist model.Artist) model2.ResponseArtist {
+func ArtistModelToResponse(artist model.Artist) responseArtist.ResponseArtist {
 
-	var responseArtist model2.ResponseArtist = model2.ResponseArtist{
+	var responseArtist responseArtist.ResponseArtist = responseArtist.ResponseArtist{
+		ID: artist.ID,
 		Name: artist.Name,
-		Age:  int(artist.Age),
+		Age:  artist.Age,
 	}
 
 	return responseArtist

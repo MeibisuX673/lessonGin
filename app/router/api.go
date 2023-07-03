@@ -18,11 +18,14 @@ func initApiRouter(ge *gin.Engine) {
 
 func initArtistRoutes(rg *gin.RouterGroup) {
 
-	albums := rg.Group("artists")
+	artists := rg.Group("artists")
 	{
 
-		albums.POST("", controllers.ArtistController.POSTArtist)
-		albums.GET("", controllers.ArtistController.GETCollectionArtist)
+		artists.POST("", controllers.ArtistController.POSTArtist)
+		artists.GET("", controllers.ArtistController.GETCollectionArtist)
+		artists.GET("/:id", controllers.ArtistController.GETArtistById)
+		artists.PUT("/:id", controllers.ArtistController.PUTArtist)
+		
 
 	}
 
