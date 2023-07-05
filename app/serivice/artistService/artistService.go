@@ -36,13 +36,12 @@ func GetCollectionArtist() ([]model.Artist, error) {
 	if result.Error != nil {
 		return nil, result.Error
 	}
-	
 
 	return artists, nil
 
 }
 
-func GetArtistById(id int) (*model.Artist, error){
+func GetArtistById(id int) (*model.Artist, error) {
 
 	var artist model.Artist
 
@@ -57,19 +56,18 @@ func GetArtistById(id int) (*model.Artist, error){
 	if result.Error != nil {
 		return nil, result.Error
 	}
-	
-	return &artist, nil
 
+	return &artist, nil
 
 }
 
-func UpdateArtist(id int, updateArtist dto.UpdateArtist) (*model.Artist, error){
+func UpdateArtist(id int, updateArtist dto.UpdateArtist) (*model.Artist, error) {
 
 	var artistUpdateMap map[string]interface{}
 
 	updateArtistByte, _ := json.Marshal(updateArtist)
 
-	if err := json.Unmarshal(updateArtistByte, &artistUpdateMap); err != nil{
+	if err := json.Unmarshal(updateArtistByte, &artistUpdateMap); err != nil {
 		return nil, err
 	}
 
@@ -78,21 +76,34 @@ func UpdateArtist(id int, updateArtist dto.UpdateArtist) (*model.Artist, error){
 	var artist model.Artist
 
 	db := database.AppDatabase.BD
-	
+
 	db.First(&artist, id)
 	db.Model(&artist).Updates(sortMap)
 
 	return &artist, nil
 
+}
+
+func DeleteArtist(id int) error {
+
+	db := database.AppDatabase.BD
+
+	result := db.Delete(&model.Artist{}, id)
+
+	if result.Error != nil {
+		return result.Error
+	}
+
+	return nil
 
 }
 
-func checkNil(args map[string]interface{}) map[string]interface{}{
+func checkNil(args map[string]interface{}) map[string]interface{} {
 
-	sortNil :=  make(map[string]interface{})
+	sortNil := make(map[string]interface{})
 
-	for key, value := range args{
-		if value != nil{
+	for key, value := range args {
+		if value != nil {
 			sortNil[key] = value
 		}
 	}

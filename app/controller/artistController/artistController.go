@@ -24,6 +24,13 @@ func (ac *ArtistController) POSTArtist(c *gin.Context) {
 	}
 
 	artist, err := artistService.CreateArtist(&createArtist)
+	if artist == nil {
+		c.JSON(http.StatusNotFound, model.Error{
+			Status:  http.StatusNotFound,
+			Message: "Артист не найден",
+		})
+		return
+	}
 	if err != nil {
 		panic(err)
 	}
@@ -41,6 +48,7 @@ func (ac *ArtistController) GETCollectionArtist(c *gin.Context) {
 	artists, err := artistService.GetCollectionArtist()
 	if err != nil {
 		panic(err)
+		return
 	}
 
 	for _, value := range artists {
@@ -56,12 +64,10 @@ func (ac *ArtistController) GETArtistById(c *gin.Context) {
 
 	id := c.Param("id")
 
-	// if !ok {
-	// 	c.JSON(http.StatusBadRequest, )
-	// }
 	artistId, err := strconv.Atoi(id)
 	if err != nil {
 		c.AbortWithError(http.StatusBadRequest, err)
+		return
 	}
 
 	artist, err := artistService.GetArtistById(artistId)
@@ -69,25 +75,29 @@ func (ac *ArtistController) GETArtistById(c *gin.Context) {
 	fmt.Println(artist)
 
 	if err != nil {
-		c.AbortWithError(http.StatusNotFound, err)
+		c.JSON(http.StatusNotFound, model.Error{
+			Status:  http.StatusNotFound,
+			Message: "Артист не найден",
+		})
+		return
 	}
 
 	var responseArtist model.ResponseArtist
-	
+
 	responseArtist = converter.ArtistModelToResponse(*artist)
 
 	c.IndentedJSON(http.StatusOK, responseArtist)
 
 }
 
-func (ac *ArtistController) PUTArtist(c *gin.Context){
-
+func (ac *ArtistController) PUTArtist(c *gin.Context) {
 
 	id, err := strconv.Atoi(c.Param("id"))
-	
+
 	if err != nil {
 
 		c.AbortWithError(http.StatusBadRequest, err)
+		return
 
 	}
 
@@ -99,6 +109,7 @@ func (ac *ArtistController) PUTArtist(c *gin.Context){
 
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
+		return
 	}
 
 	var responseArtist model.ResponseArtist
@@ -106,7 +117,30 @@ func (ac *ArtistController) PUTArtist(c *gin.Context){
 	responseArtist = converter.ArtistModelToResponse(*artist)
 
 	c.JSON(http.StatusOK, responseArtist)
-	
 
+}
+
+func (ac *ArtistController) DELETEArtist(c *gin.Context) {
+
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+
+	if _, err := artistService.GetArtistById(id); err != nil {
+
+		c.AbortWithError(http.StatusNotFound, err)
+		return
+	}
+
+	if err := artistService.DeleteArtist(id); err != nil {
+
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
+
+	}
+
+	c.Status(http.StatusNoContent)
 
 }

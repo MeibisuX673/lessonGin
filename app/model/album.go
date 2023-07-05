@@ -6,6 +6,6 @@ type Album struct {
 	gorm.Model
 	Title    string `gorm:"varchar(255)" json:"title"`
 	ArtistID int
-	Artist   Artist  `json:"artist"`
-	Price    float64 `json:"price"`
+	Artist   Artist
+	Price    float64
 }
