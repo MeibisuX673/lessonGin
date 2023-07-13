@@ -41,11 +41,21 @@ func (db *Database) dbMysqlInit() error {
 	}
 
 	return nil
+
 }
 
 func (db *Database) migrations() {
 
-	db.BD.AutoMigrate(&model.Artist{})
-	db.BD.AutoMigrate(&model.Album{})
+	if err := db.BD.AutoMigrate(&model.Artist{}); err != nil {
+		panic(err.Error())
+	}
+
+	if err := db.BD.AutoMigrate(&model.Album{}); err != nil {
+		panic(err.Error())
+	}
+
+	if err := db.BD.AutoMigrate(&model.File{}); err != nil {
+		panic(err.Error())
+	}
 
 }

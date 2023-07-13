@@ -2,19 +2,21 @@ package model
 
 type CreateAlbum struct {
 	Title    string  `json:"title" binding:"required"`
-	ArtistID int     `json:"artistID" binding:"required"`
+	ArtistID uint    `json:"artistID" binding:"required"`
 	Price    float64 `json:"price" binding:"required"`
+	FileId   *uint   `json:"file_id"`
 }
 
 type ResponseAlbum struct {
-	Id     int            `json:"id"`
-	Title  string         `json:"title"`
-	Artist ResponseArtist `json:"artist"`
-	Price  float64        `json:"price"`
+	Id    uint          `json:"id"`
+	Title string        `json:"title"`
+	Price float64       `json:"price"`
+	File  *ResponseFile `json:"file"`
 }
 
 type UpdateAlbum struct {
 	Title    *string  `json:"title"`
 	Price    *float64 `json:"price"`
-	ArtistID *int     `json:"artist_id"`
+	ArtistID *uint    `json:"artist_id"`
+	FileID   *uint    `json:"file_id"`
 }

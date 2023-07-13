@@ -1,4 +1,7 @@
 /docker
+/assets/images/
+/docs
+
 # Created by https://www.toptal.com/developers/gitignore/api/goland,go
 # Edit at https://www.toptal.com/developers/gitignore?templates=goland,go
 
@@ -12,6 +15,7 @@
 *.dll
 *.so
 *.dylib
+
 
 # Test binary, built with `go test -c`
 *.test

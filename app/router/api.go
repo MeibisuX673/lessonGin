@@ -4,7 +4,10 @@ import (
 	"github.com/MeibisuX673/lessonGin/app/controller"
 	"github.com/MeibisuX673/lessonGin/app/controller/albumController"
 	"github.com/MeibisuX673/lessonGin/app/controller/artistController"
+	"github.com/MeibisuX673/lessonGin/app/controller/fileController"
 	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 var controllers controller.Controller
@@ -13,10 +16,13 @@ func initApiRouter(ge *gin.Engine) {
 
 	controllers = initializationController()
 
+	groupSwagger := ge.Group("/swagger/*any")
 	groupApi := ge.Group("/api")
 
+	initSwagger(groupSwagger)
 	initArtistRoutes(groupApi)
 	initAlbumRoutes(groupApi)
+	initFileRoutes(groupApi)
 
 }
 
@@ -50,10 +56,28 @@ func initAlbumRoutes(rg *gin.RouterGroup) {
 
 }
 
+func initFileRoutes(rg *gin.RouterGroup) {
+
+	files := rg.Group("/files")
+	{
+		files.POST("", controllers.FileController.POSTFile)
+		files.GET("/:id", controllers.FileController.GETFileById)
+		files.GET("", controllers.FileController.GETFileCollection)
+		files.DELETE("/:id", controllers.FileController.DELETEFile)
+	}
+}
+
 func initializationController() controller.Controller {
 
 	return controller.Controller{
 		ArtistController: artistController.ArtistController{},
 		AlbumController:  albumController.AlbumController{},
+		FileController:   fileController.FileController{},
 	}
+}
+
+func initSwagger(rg *gin.RouterGroup) {
+
+	rg.GET("", ginSwagger.WrapHandler(swaggerFiles.Handler))
+
 }

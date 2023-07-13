@@ -1,142 +1,182 @@
 package artistController
 
 import (
-	"fmt"
+	dto "github.com/MeibisuX673/lessonGin/app/controller/model"
 	"net/http"
 	"strconv"
 
-	"github.com/MeibisuX673/lessonGin/app/controller/converter"
-	"github.com/MeibisuX673/lessonGin/app/controller/model"
-
-	"github.com/MeibisuX673/lessonGin/app/serivice/artistService"
+	"github.com/MeibisuX673/lessonGin/app/service/artistService"
 	"github.com/gin-gonic/gin"
 )
 
 type ArtistController struct {
 }
 
+// POSTArtist  Create Artist
+//
+//	 @Summary		Create Artist
+//		@Description	Create Artist
+//		@Tags			artists
+//		@Accept			json
+//		@Produce		json
+//	 @Param 	body body dto.CreateArtist true "body"
+//		@Success		201	{object}    dto.ResponseArtist
+//		@Failure		400	{object}	dto.Error
+//		@Failure		404	{object}	dto.Error
+//		@Failure		500	{object}	dto.Error
+//		@Router			/artists [post]
 func (ac *ArtistController) POSTArtist(c *gin.Context) {
 
-	var createArtist = model.CreateArtist{}
+	var createArtist = dto.CreateArtist{}
 
 	if err := c.BindJSON(&createArtist); err != nil {
-		panic(err)
+		c.JSON(http.StatusBadRequest, dto.Error{
+			Status:  http.StatusBadRequest,
+			Message: err.Error(),
+		})
 	}
 
 	artist, err := artistService.CreateArtist(&createArtist)
-	if artist == nil {
-		c.JSON(http.StatusNotFound, model.Error{
-			Status:  http.StatusNotFound,
-			Message: "Артист не найден",
-		})
+	if err != nil {
+		c.JSON(err.GetStatus(), err)
 		return
 	}
-	if err != nil {
-		panic(err)
-	}
 
-	responseArtist := converter.ArtistModelToResponse(*artist)
-
-	c.JSON(http.StatusCreated, responseArtist)
+	c.JSON(http.StatusCreated, artist)
 
 }
 
+// GETCollectionArtist  Get Collection Artist
+//
+//	 @Summary		Get Collection Artist
+//		@Description	 Get Collection Artist
+//		@Tags			artists
+//		@Accept			json
+//		@Produce		json
+//		@Success		200	{array}	    dto.ResponseArtist
+//		@Failure		500	{object}	dto.Error
+//		@Router			/artists [get]
 func (ac *ArtistController) GETCollectionArtist(c *gin.Context) {
-
-	var responseArtists []model.ResponseArtist
 
 	artists, err := artistService.GetCollectionArtist()
 	if err != nil {
-		panic(err)
+		c.JSON(err.GetStatus(), err)
 		return
 	}
 
-	for _, value := range artists {
-
-		responseArtists = append(responseArtists, converter.ArtistModelToResponse(value))
-	}
-
-	c.JSON(http.StatusOK, responseArtists)
+	c.JSON(http.StatusOK, artists)
 
 }
 
+// GETArtistById Get Artist
+//
+//	 @Summary		Get Artist
+//		@Description	 Get Artist
+//		@Tags			artists
+//		@Accept			json
+//		@Produce		json
+//		@param id path int true "id"
+//		@Success		200	{object}	    dto.ResponseArtist
+//		@Failure		400	{object}	dto.Error
+//		@Failure		404	{object}	dto.Error
+//		@Failure		500	{object}	dto.Error
+//		@Router			/artists/{id} [get]
 func (ac *ArtistController) GETArtistById(c *gin.Context) {
 
 	id := c.Param("id")
 
 	artistId, err := strconv.Atoi(id)
 	if err != nil {
-		c.AbortWithError(http.StatusBadRequest, err)
-		return
-	}
-
-	artist, err := artistService.GetArtistById(artistId)
-
-	fmt.Println(artist)
-
-	if err != nil {
-		c.JSON(http.StatusNotFound, model.Error{
-			Status:  http.StatusNotFound,
-			Message: "Артист не найден",
+		c.JSON(http.StatusBadRequest, dto.Error{
+			Status:  http.StatusBadRequest,
+			Message: "id должно быть числом",
 		})
 		return
 	}
 
-	var responseArtist model.ResponseArtist
+	artist, errGetArtistById := artistService.GetArtistById(uint(artistId))
+	if errGetArtistById != nil {
+		c.JSON(errGetArtistById.GetStatus(), errGetArtistById)
+		return
+	}
 
-	responseArtist = converter.ArtistModelToResponse(*artist)
-
-	c.IndentedJSON(http.StatusOK, responseArtist)
+	c.IndentedJSON(http.StatusOK, artist)
 
 }
 
+// PUTArtist Update Artist
+//
+//		 @Summary		Update Artist
+//			@Description	 Update Artist
+//			@Tags			artists
+//			@Accept			json
+//			@Produce		json
+//			@param id path int true "id"
+//	     @param body body dto.UpdateArtist true "body"
+//			@Success		200	{object}	    dto.ResponseArtist
+//			@Failure		400	{object}	dto.Error
+//			@Failure		404	{object}	dto.Error
+//			@Failure		500	{object}	dto.Error
+//			@Router			/artists/{id} [put]
 func (ac *ArtistController) PUTArtist(c *gin.Context) {
 
 	id, err := strconv.Atoi(c.Param("id"))
 
 	if err != nil {
-
-		c.AbortWithError(http.StatusBadRequest, err)
+		c.JSON(http.StatusBadRequest, dto.Error{
+			Status:  http.StatusBadRequest,
+			Message: "id должно быть числом",
+		})
 		return
 
 	}
 
-	var updateArtist model.UpdateArtist
+	var updateArtist dto.UpdateArtist
 
-	c.BindJSON(&updateArtist)
+	if err := c.BindJSON(&updateArtist); err != nil {
+		c.JSON(http.StatusBadRequest, dto.Error{
+			Status:  http.StatusBadRequest,
+			Message: err.Error(),
+		})
+	}
 
-	artist, err := artistService.UpdateArtist(id, updateArtist)
+	artist, errUpdateArtist := artistService.UpdateArtist(id, updateArtist)
 
-	if err != nil {
-		c.AbortWithError(http.StatusInternalServerError, err)
+	if errUpdateArtist != nil {
+		c.JSON(errUpdateArtist.GetStatus(), errUpdateArtist)
 		return
 	}
 
-	var responseArtist model.ResponseArtist
-
-	responseArtist = converter.ArtistModelToResponse(*artist)
-
-	c.JSON(http.StatusOK, responseArtist)
+	c.JSON(http.StatusOK, artist)
 
 }
 
+// DELETEArtist Delete Artist
+//
+//	 @Summary		Delete Artist
+//		@Description	 Delete Artist
+//		@Tags			artists
+//		@Accept			json
+//		@Produce		json
+//		@param id path int true "id"
+//		@Success		204
+//		@Failure		400	{object}	dto.Error
+//		@Failure		404	{object}	dto.Error
+//		@Failure		500	{object}	dto.Error
+//		@Router			/artists/{id} [delete]
 func (ac *ArtistController) DELETEArtist(c *gin.Context) {
 
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		c.AbortWithError(http.StatusBadRequest, err)
+		c.JSON(http.StatusBadRequest, dto.Error{
+			Status:  http.StatusBadRequest,
+			Message: "id должно быть числом",
+		})
 		return
 	}
 
-	if _, err := artistService.GetArtistById(id); err != nil {
-
-		c.AbortWithError(http.StatusNotFound, err)
-		return
-	}
-
-	if err := artistService.DeleteArtist(id); err != nil {
-
-		c.AbortWithError(http.StatusInternalServerError, err)
+	if err := artistService.DeleteArtist(uint(id)); err != nil {
+		c.JSON(err.GetStatus(), err)
 		return
 
 	}
