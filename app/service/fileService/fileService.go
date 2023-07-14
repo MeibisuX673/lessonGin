@@ -104,7 +104,7 @@ func GetFileCollection() ([]dto.ResponseFile, dto.ErrorInterface) {
 
 	db := database.AppDatabase.BD
 
-	if err := db.Model(model.File{}).Find(&files).Error; err != nil {
+	if err := db.Find(&files).Error; err != nil {
 		return nil, &dto.Error{
 			Status:  http.StatusInternalServerError,
 			Message: err.Error(),
