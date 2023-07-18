@@ -123,7 +123,7 @@ func DeleteFile(id uint) dto.ErrorInterface {
 
 	var file model.File
 
-	if count := db.Model(model.File{}).First(&file, id).RowsAffected; count == 0 {
+	if count := db.First(&file, id).RowsAffected; count == 0 {
 		return &dto.Error{
 			Status:  http.StatusNotFound,
 			Message: "Файл не найден",
@@ -137,7 +137,7 @@ func DeleteFile(id uint) dto.ErrorInterface {
 		}
 	}
 
-	if err := db.Model(model.File{}).Unscoped().Delete(&file).Error; err != nil {
+	if err := db.Unscoped().Delete(&file).Error; err != nil {
 		return &dto.Error{
 			Status:  http.StatusInternalServerError,
 			Message: err.Error(),

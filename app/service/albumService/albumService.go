@@ -6,6 +6,7 @@ import (
 	"github.com/MeibisuX673/lessonGin/app/model"
 	"github.com/MeibisuX673/lessonGin/app/service/artistService"
 	"github.com/MeibisuX673/lessonGin/app/service/fileService"
+	"github.com/MeibisuX673/lessonGin/app/service/queryService"
 	"github.com/MeibisuX673/lessonGin/config/database"
 	"gorm.io/gorm/clause"
 	"net/http"
@@ -48,13 +49,17 @@ func CreateAlbum(albumRequest dto.CreateAlbum) (*dto.ResponseAlbum, dto.ErrorInt
 
 }
 
-func GetCollectionAlbum() ([]dto.ResponseAlbum, *dto.Error) {
+func GetCollectionAlbum(query model.Query) ([]dto.ResponseAlbum, *dto.Error) {
 
 	db := database.AppDatabase.BD
 
 	var albums []model.Album
 
-	result := db.Model(&model.Album{}).Preload(clause.Associations).Find(&albums)
+	result := db.Preload(clause.Associations)
+
+	queryService.ConfigurationDbQuery(result, query)
+
+	result.Find(&albums)
 
 	if result.Error != nil {
 		return nil, &dto.Error{

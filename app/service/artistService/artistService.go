@@ -5,6 +5,7 @@ import (
 	dto "github.com/MeibisuX673/lessonGin/app/controller/model"
 	"github.com/MeibisuX673/lessonGin/app/model"
 	"github.com/MeibisuX673/lessonGin/app/service/fileService"
+	"github.com/MeibisuX673/lessonGin/app/service/queryService"
 	"github.com/MeibisuX673/lessonGin/config/database"
 	"gorm.io/gorm/clause"
 	"net/http"
@@ -44,13 +45,17 @@ func CreateArtist(artistRequest *dto.CreateArtist) (*dto.ResponseArtist, dto.Err
 
 }
 
-func GetCollectionArtist() ([]dto.ResponseArtist, dto.ErrorInterface) {
+func GetCollectionArtist(query model.Query) ([]dto.ResponseArtist, dto.ErrorInterface) {
 
 	var artists []model.Artist
 
 	db := database.AppDatabase.BD
 
-	result := db.Preload(clause.Associations).Find(&artists)
+	result := db.Preload(clause.Associations)
+
+	queryService.ConfigurationDbQuery(result, query)
+
+	result.Find(&artists)
 
 	if result.Error != nil {
 		return nil, &dto.Error{

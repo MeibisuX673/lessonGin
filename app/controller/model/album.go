@@ -8,10 +8,11 @@ type CreateAlbum struct {
 }
 
 type ResponseAlbum struct {
-	Id    uint          `json:"id"`
-	Title string        `json:"title"`
-	Price float64       `json:"price"`
-	File  *ResponseFile `json:"file"`
+	Id       uint          `json:"id"`
+	Title    string        `json:"title"`
+	Price    float64       `json:"price"`
+	ArtistID uint          `json:"artistID"`
+	File     *ResponseFile `json:"file"`
 }
 
 type UpdateAlbum struct {

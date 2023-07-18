@@ -2,6 +2,7 @@ package artistController
 
 import (
 	dto "github.com/MeibisuX673/lessonGin/app/controller/model"
+	"github.com/MeibisuX673/lessonGin/app/service/queryService"
 	"net/http"
 	"strconv"
 
@@ -48,17 +49,27 @@ func (ac *ArtistController) POSTArtist(c *gin.Context) {
 
 // GETCollectionArtist  Get Collection Artist
 //
-//	 @Summary		Get Collection Artist
-//		@Description	 Get Collection Artist
-//		@Tags			artists
-//		@Accept			json
-//		@Produce		json
-//		@Success		200	{array}	    dto.ResponseArtist
-//		@Failure		500	{object}	dto.Error
-//		@Router			/artists [get]
+//			 @Summary		Get Collection Artist
+//				@Description	 Get Collection Artist
+//				@Tags			artists
+//		     @Param page query string true "page" default(1)
+//		     @Param limit query string false "limit" default(5)
+//			 @Param filter[id][exact] query string false "filter[id][exact]"
+//			 @Param filter[name][partial] query string false "filter[name][partial]"
+//			 @Param order[age] query string false "order[age]"
+//			 @Param order[created_at] query string false "order[created_at]"
+//	         @Param range[age][gt] query string false "range[age][gt]"
+//			 @Param range[age][lt] query string false "range[age][lt]"
+//				@Accept			json
+//				@Produce		json
+//				@Success		200	{array}	    dto.ResponseArtist
+//				@Failure		500	{object}	dto.Error
+//				@Router			/artists [get]
 func (ac *ArtistController) GETCollectionArtist(c *gin.Context) {
 
-	artists, err := artistService.GetCollectionArtist()
+	queries := queryService.GetQueries(c)
+
+	artists, err := artistService.GetCollectionArtist(*queries)
 	if err != nil {
 		c.JSON(err.GetStatus(), err)
 		return

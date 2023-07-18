@@ -4,6 +4,7 @@ import (
 	"github.com/MeibisuX673/lessonGin/app/controller/model"
 	"github.com/MeibisuX673/lessonGin/app/service/albumService"
 	"github.com/MeibisuX673/lessonGin/app/service/artistService"
+	"github.com/MeibisuX673/lessonGin/app/service/queryService"
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"strconv"
@@ -14,12 +15,12 @@ type AlbumController struct {
 
 // POSTAlbum Create Album
 //
-//	 @Summary		Create Album
+//	    @Summary		Create Album
 //		@Description	Create Album
 //		@Tags			albums
 //		@Accept			json
 //		@Produce		json
-//	 @Param 	body body model.CreateAlbum true "body"
+//	    @Param 	body body model.CreateAlbum true "body"
 //		@Success		201	{object}	    model.ResponseAlbum
 //		@Failure		400	{object}	model.Error
 //		@Failure		404	{object}	model.Error
@@ -62,17 +63,29 @@ func (ac *AlbumController) POSTAlbum(c *gin.Context) {
 
 // GETCollectionAlbum Get collection Album
 //
-//	 @Summary		Get collection Album
-//		@Description	Get collection Album
-//		@Tags			albums
-//		@Accept			json
-//		@Produce		json
-//		@Success		200	{array}	    model.ResponseAlbum
-//		@Failure		500	{object}	model.Error
-//		@Router			/albums [get]
+// @Summary		Get collection Album
+// @Description	Get collection Album
+// @Tags			albums
+// @Param page query int true "page number" default(1)
+// @Param limit query string false "limit" default(5)
+// @Param filter[id][exact] query int false "filter[id][exact]"
+// @Param filter[title][partial] query string false "filter[title][partial]"
+// @Param filter[artist_id][exact] query int false "filter[artist.id]"
+// @Param order[price] query string false "order[price]"
+// @Param order[id] query string false "order[id]"
+// @Param order[created_at] query string false "order[created_at]"
+// @Param range[price][gt] query string false "range[price][gt]"
+// @Param range[price][lt] query string false "range[price][lt]"
+// @Accept			json
+// @Produce		json
+// @Success		200	{array}	    model.ResponseAlbum
+// @Failure		500	{object}	model.Error
+// @Router			/albums [get]
 func (ac *AlbumController) GETCollectionAlbum(c *gin.Context) {
 
-	albums, err := albumService.GetCollectionAlbum()
+	queryModel := queryService.GetQueries(c)
+
+	albums, err := albumService.GetCollectionAlbum(*queryModel)
 
 	if err != nil {
 		c.JSON(err.GetStatus(), err)
