@@ -1,9 +1,9 @@
 package model
 
 type CreateAlbum struct {
-	Title    string  `json:"title" binding:"required"`
-	ArtistID uint    `json:"artistID" binding:"required"`
-	Price    float64 `json:"price" binding:"required"`
+	Title    string  `json:"title" validate:"required"`
+	ArtistID uint    `json:"artistID" validate:"required,number"`
+	Price    float64 `json:"price" validate:"required,number"`
 	FileId   *uint   `json:"file_id"`
 }
 

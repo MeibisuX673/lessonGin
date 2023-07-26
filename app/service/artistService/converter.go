@@ -42,7 +42,7 @@ func convertToArtistResponseCollection(artists []model.Artist) (responseArtists 
 
 }
 
-func convertToOneArtistResponse(artist model.Artist) (responseArtist dto.ResponseArtist) {
+func ConvertToOneArtistResponse(artist model.Artist) (responseArtist dto.ResponseArtist) {
 
 	var responseFiles []dto.ResponseFile
 	var responseAlbum []dto.ResponseAlbum

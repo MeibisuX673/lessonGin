@@ -4,7 +4,9 @@ import (
 	"github.com/MeibisuX673/lessonGin/app/controller"
 	"github.com/MeibisuX673/lessonGin/app/controller/albumController"
 	"github.com/MeibisuX673/lessonGin/app/controller/artistController"
+	"github.com/MeibisuX673/lessonGin/app/controller/authController"
 	"github.com/MeibisuX673/lessonGin/app/controller/fileController"
+	"github.com/MeibisuX673/lessonGin/app/middleware"
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -20,9 +22,19 @@ func initApiRouter(ge *gin.Engine) {
 	groupApi := ge.Group("/api")
 
 	initSwagger(groupSwagger)
+	initAuthRoutes(groupApi)
 	initArtistRoutes(groupApi)
 	initAlbumRoutes(groupApi)
 	initFileRoutes(groupApi)
+
+}
+
+func initAuthRoutes(rg *gin.RouterGroup) {
+
+	auth := rg.Group("auth")
+	{
+		auth.POST("", controllers.AuthController.Auth)
+	}
 
 }
 
@@ -34,8 +46,8 @@ func initArtistRoutes(rg *gin.RouterGroup) {
 		artists.POST("", controllers.ArtistController.POSTArtist)
 		artists.GET("", controllers.ArtistController.GETCollectionArtist)
 		artists.GET("/:id", controllers.ArtistController.GETArtistById)
-		artists.PUT("/:id", controllers.ArtistController.PUTArtist)
-		artists.DELETE("/:id", controllers.ArtistController.DELETEArtist)
+		artists.PUT("/:id", middleware.JwtMiddleware, controllers.ArtistController.PUTArtist)
+		artists.DELETE("/:id", middleware.JwtMiddleware, controllers.ArtistController.DELETEArtist)
 
 	}
 
@@ -73,6 +85,7 @@ func initializationController() controller.Controller {
 		ArtistController: artistController.ArtistController{},
 		AlbumController:  albumController.AlbumController{},
 		FileController:   fileController.FileController{},
+		AuthController:   authController.AuthController{},
 	}
 }
 

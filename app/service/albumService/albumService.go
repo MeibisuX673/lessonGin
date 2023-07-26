@@ -155,7 +155,24 @@ func DeleteAlbum(id int) dto.ErrorInterface {
 
 	db := database.AppDatabase.BD
 
-	result := db.Delete(&model.Album{}, id)
+	var album model.Album
+
+	if count := db.First(&album, id).RowsAffected; count == 0 {
+		return &dto.Error{
+			Status:  http.StatusNotFound,
+			Message: "Album not found",
+		}
+	}
+
+	if album.File != nil {
+
+		if err := fileService.DeleteFileFromDisk([]model.File{*album.File}); err != nil {
+			return err
+		}
+
+	}
+
+	result := db.Unscoped().Delete(&model.Album{}, id)
 
 	if result.Error != nil {
 		return &dto.Error{

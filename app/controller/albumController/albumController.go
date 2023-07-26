@@ -1,10 +1,11 @@
 package albumController
 
 import (
-	"github.com/MeibisuX673/lessonGin/app/controller/model"
+	dto "github.com/MeibisuX673/lessonGin/app/controller/model"
 	"github.com/MeibisuX673/lessonGin/app/service/albumService"
 	"github.com/MeibisuX673/lessonGin/app/service/artistService"
 	"github.com/MeibisuX673/lessonGin/app/service/queryService"
+	"github.com/MeibisuX673/lessonGin/app/service/securityService"
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"strconv"
@@ -28,10 +29,10 @@ type AlbumController struct {
 //		@Router			/albums [post]
 func (ac *AlbumController) POSTAlbum(c *gin.Context) {
 
-	var createAlbum model.CreateAlbum
+	var createAlbum dto.CreateAlbum
 
 	if err := c.BindJSON(&createAlbum); err != nil {
-		c.JSON(http.StatusBadRequest, model.Error{
+		c.JSON(http.StatusBadRequest, dto.Error{
 			Status:  http.StatusBadRequest,
 			Message: err.Error(),
 		})
@@ -41,10 +42,7 @@ func (ac *AlbumController) POSTAlbum(c *gin.Context) {
 	artist, err := artistService.GetArtistById(createAlbum.ArtistID)
 
 	if err != nil {
-		c.JSON(http.StatusNotFound, model.Error{
-			Status:  http.StatusNotFound,
-			Message: "Пользователь не найден",
-		})
+		c.JSON(err.GetStatus(), err)
 		return
 	}
 
@@ -114,7 +112,7 @@ func (ac *AlbumController) GETAlbumById(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 
 	if err != nil {
-		c.JSON(http.StatusBadRequest, model.Error{
+		c.JSON(http.StatusBadRequest, dto.Error{
 			Status:  http.StatusBadRequest,
 			Message: "id должно быть числом",
 		})
@@ -134,24 +132,25 @@ func (ac *AlbumController) GETAlbumById(c *gin.Context) {
 
 // PUTAlbum   Update Album
 //
-//			 @Summary		Update Album
-//				@Description	Update Album
-//				@Tags			albums
-//				@Accept			json
-//		     	@Param id path     int  true "id"
-//	 @Param 	body body model.CreateAlbum true "body"
-//				@Produce		json
-//				@Success		200	{array}	    model.ResponseAlbum
-//				@Failure		400	{object}	model.Error
-//				@Failure		404	{object}	model.Error
-//				@Failure		500	{object}	model.Error
-//				@Router			/albums/{id} [put]
+//			@Summary		Update Album
+//			@security ApiKeyAuth
+//			@Description	Update Album
+//			@Tags			albums
+//			@Accept			json
+//		    @Param id path     int  true "id"
+//	 		@Param 	body body model.CreateAlbum true "body"
+//			@Produce		json
+//			@Success		200	{array}	    model.ResponseAlbum
+//			@Failure		400	{object}	model.Error
+//			@Failure		404	{object}	model.Error
+//			@Failure		500	{object}	model.Error
+//			@Router			/albums/{id} [put]
 func (ac *AlbumController) PUTAlbum(c *gin.Context) {
 
-	var updateAlbum model.UpdateAlbum
+	var updateAlbum dto.UpdateAlbum
 
 	if err := c.BindJSON(&updateAlbum); err != nil {
-		c.JSON(http.StatusBadRequest, model.Error{
+		c.JSON(http.StatusBadRequest, dto.Error{
 			Status:  http.StatusBadRequest,
 			Message: err.Error(),
 		})
@@ -162,7 +161,7 @@ func (ac *AlbumController) PUTAlbum(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 
 	if err != nil {
-		c.JSON(http.StatusBadRequest, model.Error{
+		c.JSON(http.StatusBadRequest, dto.Error{
 			Status:  http.StatusBadRequest,
 			Message: "id должно быть числом",
 		})
@@ -182,32 +181,42 @@ func (ac *AlbumController) PUTAlbum(c *gin.Context) {
 
 // DELETEAlbum Delete Album
 //
-//			 @Summary		Delete Album
-//				@Description	Delete Album
-//				@Tags			albums
-//				@Accept			json
-//	 @Param 	id path int true "id"
-//				@Produce		json
-//				@Success		204
-//				@Failure		400	{object}	model.Error
-//				@Failure		404	{object}	model.Error
-//				@Failure		500	{object}	model.Error
-//				@Router			/albums/{id} [delete]
+//		@Summary		Delete Album
+//		@security ApiKeyAuth
+//		@Description	Delete Album
+//		@Tags			albums
+//		@Accept			json
+//	 	@Param 	id path int true "id"
+//		@Produce		json
+//		@Success		204
+//		@Failure		400	{object}	model.Error
+//		@Failure		404	{object}	model.Error
+//		@Failure		500	{object}	model.Error
+//		@Router			/albums/{id} [delete]
 func (ac *AlbumController) DELETEAlbum(c *gin.Context) {
 
 	id, err := strconv.Atoi(c.Param("id"))
 
 	if err != nil {
-		c.JSON(http.StatusBadRequest, model.Error{
+		c.JSON(http.StatusBadRequest, dto.Error{
 			Status:  http.StatusBadRequest,
 			Message: "id должно быть числом",
 		})
 		return
 	}
 
+	artist := securityService.GetCurrentUser(c)
+
+	if artist.ID != uint(id) {
+		c.JSON(http.StatusForbidden, dto.Error{
+			Status:  http.StatusForbidden,
+			Message: "Access Denied",
+		})
+	}
+
 	if err := albumService.DeleteAlbum(id); err != nil {
 
-		c.JSON(http.StatusInternalServerError, model.Error{
+		c.JSON(http.StatusInternalServerError, dto.Error{
 			Status:  http.StatusInternalServerError,
 			Message: err.Error(),
 		})

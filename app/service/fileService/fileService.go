@@ -159,3 +159,19 @@ func checkExtension(extension string) bool {
 	return false
 
 }
+
+func DeleteFileFromDisk(files []model.File) dto.ErrorInterface {
+
+	for _, file := range files {
+
+		if err := os.Remove(fmt.Sprintf(os.Getenv("DIR_IMAGES")+"/%s", file.Name)); err != nil {
+			return &dto.Error{
+				Status:  http.StatusInternalServerError,
+				Message: err.Error(),
+			}
+		}
+	}
+
+	return nil
+
+}

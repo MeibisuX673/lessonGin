@@ -2,6 +2,7 @@ package artistController
 
 import (
 	dto "github.com/MeibisuX673/lessonGin/app/controller/model"
+	"github.com/MeibisuX673/lessonGin/app/service/emailService"
 	"github.com/MeibisuX673/lessonGin/app/service/queryService"
 	"net/http"
 	"strconv"
@@ -15,12 +16,12 @@ type ArtistController struct {
 
 // POSTArtist  Create Artist
 //
-//	 @Summary		Create Artist
+//	    @Summary		Create Artist
 //		@Description	Create Artist
 //		@Tags			artists
 //		@Accept			json
 //		@Produce		json
-//	 @Param 	body body dto.CreateArtist true "body"
+//	    @Param 	body body dto.CreateArtist true "body"
 //		@Success		201	{object}    dto.ResponseArtist
 //		@Failure		400	{object}	dto.Error
 //		@Failure		404	{object}	dto.Error
@@ -43,28 +44,30 @@ func (ac *ArtistController) POSTArtist(c *gin.Context) {
 		return
 	}
 
+	emailService.SendRegistration(createArtist.Email)
+
 	c.JSON(http.StatusCreated, artist)
 
 }
 
 // GETCollectionArtist  Get Collection Artist
 //
-//			 @Summary		Get Collection Artist
-//				@Description	 Get Collection Artist
-//				@Tags			artists
-//		     @Param page query string true "page" default(1)
-//		     @Param limit query string false "limit" default(5)
-//			 @Param filter[id][exact] query string false "filter[id][exact]"
-//			 @Param filter[name][partial] query string false "filter[name][partial]"
-//			 @Param order[age] query string false "order[age]"
-//			 @Param order[created_at] query string false "order[created_at]"
-//	         @Param range[age][gt] query string false "range[age][gt]"
-//			 @Param range[age][lt] query string false "range[age][lt]"
-//				@Accept			json
-//				@Produce		json
-//				@Success		200	{array}	    dto.ResponseArtist
-//				@Failure		500	{object}	dto.Error
-//				@Router			/artists [get]
+//		@Summary		Get Collection Artist
+//		@Description	 Get Collection Artist
+//		@Tags			artists
+//		@Param page query string true "page" default(1)
+//		@Param limit query string false "limit" default(5)
+//		@Param filter[id][exact] query string false "filter[id][exact]"
+//		@Param filter[name][partial] query string false "filter[name][partial]"
+//		@Param order[age] query string false "order[age]"
+//		@Param order[created_at] query string false "order[created_at]"
+//	    @Param range[age][gt] query string false "range[age][gt]"
+//		@Param range[age][lt] query string false "range[age][lt]"
+//		@Accept			json
+//		@Produce		json
+//		@Success		200	{array}	    dto.ResponseArtist
+//		@Failure		500	{object}	dto.Error
+//		@Router			/artists [get]
 func (ac *ArtistController) GETCollectionArtist(c *gin.Context) {
 
 	queries := queryService.GetQueries(c)
@@ -117,13 +120,14 @@ func (ac *ArtistController) GETArtistById(c *gin.Context) {
 
 // PUTArtist Update Artist
 //
-//		 @Summary		Update Artist
+//			@Summary		Update Artist
+//	     @security ApiKeyAuth
 //			@Description	 Update Artist
 //			@Tags			artists
 //			@Accept			json
 //			@Produce		json
 //			@param id path int true "id"
-//	     @param body body dto.UpdateArtist true "body"
+//		    @param body body dto.UpdateArtist true "body"
 //			@Success		200	{object}	    dto.ResponseArtist
 //			@Failure		400	{object}	dto.Error
 //			@Failure		404	{object}	dto.Error
@@ -164,17 +168,18 @@ func (ac *ArtistController) PUTArtist(c *gin.Context) {
 
 // DELETEArtist Delete Artist
 //
-//	 @Summary		Delete Artist
-//		@Description	 Delete Artist
-//		@Tags			artists
-//		@Accept			json
-//		@Produce		json
-//		@param id path int true "id"
-//		@Success		204
-//		@Failure		400	{object}	dto.Error
-//		@Failure		404	{object}	dto.Error
-//		@Failure		500	{object}	dto.Error
-//		@Router			/artists/{id} [delete]
+//		    @Summary		Delete Artist
+//	     @security ApiKeyAuth
+//			@Description	 Delete Artist
+//			@Tags			artists
+//			@Accept			json
+//			@Produce		json
+//			@param id path int true "id"
+//			@Success		204
+//			@Failure		400	{object}	dto.Error
+//			@Failure		404	{object}	dto.Error
+//			@Failure		500	{object}	dto.Error
+//			@Router			/artists/{id} [delete]
 func (ac *ArtistController) DELETEArtist(c *gin.Context) {
 
 	id, err := strconv.Atoi(c.Param("id"))
@@ -185,6 +190,16 @@ func (ac *ArtistController) DELETEArtist(c *gin.Context) {
 		})
 		return
 	}
+
+	//artist := securityService.GetCurrentUser(c)
+	//
+	//if artist.ID != uint(id) {
+	//	c.JSON(http.StatusForbidden, dto.Error{
+	//		Status:  http.StatusForbidden,
+	//		Message: "Access Denied",
+	//	})
+	//	return
+	//}
 
 	if err := artistService.DeleteArtist(uint(id)); err != nil {
 		c.JSON(err.GetStatus(), err)

@@ -3,6 +3,8 @@
 ### Swagger
 ``$ ./bin/swag init``
 
+Скопировать .env в .env.local
+
 ### Заппуск проекта
 ``docker-compose up -d``\
 ``$ go run main.go``
