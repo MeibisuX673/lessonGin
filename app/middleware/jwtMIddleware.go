@@ -16,12 +16,28 @@ func JwtMiddleware(c *gin.Context) {
 
 	tokenString := c.GetHeader("Authorization")
 
+	if len(tokenString) == 0 {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, dto.Error{
+			Status:  http.StatusUnauthorized,
+			Message: "Not Unauthorized",
+		})
+		return
+	}
+
 	tokenData := strings.Fields(tokenString)
+
+	if tokenData[0] != "Bearer" {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, dto.Error{
+			Status:  http.StatusUnauthorized,
+			Message: "Invalid type token",
+		})
+		return
+	}
 
 	token, _ := jwt.Parse(tokenData[1], func(token *jwt.Token) (interface{}, error) {
 
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			c.JSON(http.StatusUnauthorized, dto.Error{
+			c.AbortWithStatusJSON(http.StatusUnauthorized, dto.Error{
 				Status:  http.StatusUnauthorized,
 				Message: "Not Unauthorized",
 			})

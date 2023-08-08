@@ -5,14 +5,21 @@ import (
 	"fmt"
 	dto "github.com/MeibisuX673/lessonGin/app/controller/model"
 	"github.com/MeibisuX673/lessonGin/app/model"
-	"github.com/MeibisuX673/lessonGin/config/database"
+	"github.com/MeibisuX673/lessonGin/app/repository"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"gorm.io/gorm/clause"
 	"net/http"
 	"os"
 	"path/filepath"
 )
+
+type FileService struct {
+	FileRepository repository.FileRepositoryInterface
+}
+
+func New(fileRepository repository.FileRepositoryInterface) *FileService {
+	return &FileService{FileRepository: fileRepository}
+}
 
 var extensions []string = []string{
 	".png",
@@ -20,7 +27,7 @@ var extensions []string = []string{
 	".svg",
 }
 
-func UploadFile(c *gin.Context) (*model.File, error) {
+func (fs *FileService) UploadFile(c *gin.Context) (*model.File, error) {
 
 	file, err := c.FormFile("file")
 
@@ -53,62 +60,37 @@ func UploadFile(c *gin.Context) (*model.File, error) {
 
 }
 
-func CreateFileInDatabase(createFile dto.CreateFile) (*dto.ResponseFile, dto.ErrorInterface) {
+func (fs *FileService) CreateFileInDatabase(createFile dto.CreateFile) (*dto.FileResponse, dto.ErrorInterface) {
 
-	db := database.AppDatabase.BD
-
-	var file model.File = model.File{
-		Name: createFile.Name,
-		Path: createFile.Path,
+	file, err := fs.FileRepository.Create(createFile)
+	if err != nil {
+		return nil, err
 	}
 
-	result := db.Create(&file)
-
-	if result.Error != nil {
-		return nil, &dto.Error{
-			Status:  http.StatusInternalServerError,
-			Message: result.Error.Error(),
-		}
-	}
-
-	response := convertToOneFileResponse(file)
+	response := convertToOneFileResponse(*file)
 
 	return &response, nil
 
 }
 
-func GetFileById(id uint) (*dto.ResponseFile, dto.ErrorInterface) {
+func (fs *FileService) GetFileById(id uint) (*dto.FileResponse, dto.ErrorInterface) {
 
-	db := database.AppDatabase.BD
-
-	var file model.File
-
-	result := db.Preload(clause.Associations).First(&file, id)
-
-	if result.RowsAffected == 0 {
-		return nil, &dto.Error{
-			Status:  http.StatusNotFound,
-			Message: "Файл не найден",
-		}
+	file, err := fs.FileRepository.GetById(id)
+	if err != nil {
+		return nil, err
 	}
 
-	response := convertToOneFileResponse(file)
+	response := convertToOneFileResponse(*file)
 
 	return &response, nil
 
 }
 
-func GetFileCollection() ([]dto.ResponseFile, dto.ErrorInterface) {
+func (fs *FileService) GetFileCollection(query model.Query) ([]dto.FileResponse, dto.ErrorInterface) {
 
-	var files []model.File
-
-	db := database.AppDatabase.BD
-
-	if err := db.Find(&files).Error; err != nil {
-		return nil, &dto.Error{
-			Status:  http.StatusInternalServerError,
-			Message: err.Error(),
-		}
+	files, err := fs.FileRepository.GetAll(query)
+	if err != nil {
+		return nil, err
 	}
 
 	response := convertToFileResponseCollection(files)
@@ -117,17 +99,11 @@ func GetFileCollection() ([]dto.ResponseFile, dto.ErrorInterface) {
 
 }
 
-func DeleteFile(id uint) dto.ErrorInterface {
+func (fs *FileService) DeleteFile(id uint) dto.ErrorInterface {
 
-	db := database.AppDatabase.BD
-
-	var file model.File
-
-	if count := db.First(&file, id).RowsAffected; count == 0 {
-		return &dto.Error{
-			Status:  http.StatusNotFound,
-			Message: "Файл не найден",
-		}
+	file, err := fs.FileRepository.GetById(id)
+	if err != nil {
+		return err
 	}
 
 	if err := os.Remove(fmt.Sprintf(os.Getenv("DIR_IMAGES")+"/%s", file.Name)); err != nil {
@@ -137,14 +113,24 @@ func DeleteFile(id uint) dto.ErrorInterface {
 		}
 	}
 
-	if err := db.Unscoped().Delete(&file).Error; err != nil {
-		return &dto.Error{
-			Status:  http.StatusInternalServerError,
-			Message: err.Error(),
-		}
+	if err := fs.FileRepository.Delete(id); err != nil {
+		return err
 	}
 
 	return nil
+
+}
+
+func (fs *FileService) GetBy(arguments map[string]interface{}) ([]dto.FileResponse, dto.ErrorInterface) {
+
+	files, err := fs.FileRepository.FindBy(arguments)
+	if err != nil {
+		return nil, err
+	}
+
+	response := convertToFileResponseCollection(files)
+
+	return response, nil
 
 }
 
@@ -160,7 +146,7 @@ func checkExtension(extension string) bool {
 
 }
 
-func DeleteFileFromDisk(files []model.File) dto.ErrorInterface {
+func (fs *FileService) DeleteFileFromDisk(files []dto.FileResponse) dto.ErrorInterface {
 
 	for _, file := range files {
 

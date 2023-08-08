@@ -1,4 +1,4 @@
-package hashPasswordService
+package Helper
 
 import "golang.org/x/crypto/bcrypt"
 

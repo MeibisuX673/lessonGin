@@ -9,7 +9,10 @@ import (
 	"time"
 )
 
-func CreateJwtToken(artist model.Artist) (string, dto.ErrorInterface) {
+type JWTService struct {
+}
+
+func (jwts *JWTService) CreateJwtToken(artist model.Artist) (string, dto.ErrorInterface) {
 
 	token := jwt.New(jwt.SigningMethodHS256)
 
@@ -19,14 +22,11 @@ func CreateJwtToken(artist model.Artist) (string, dto.ErrorInterface) {
 	claims["sub"] = artist.ID
 
 	tokenStr, err := token.SignedString([]byte(os.Getenv("SECRET")))
-
 	if err != nil {
-
 		return "", &dto.Error{
 			Status:  http.StatusInternalServerError,
 			Message: err.Error(),
 		}
-
 	}
 
 	return tokenStr, nil

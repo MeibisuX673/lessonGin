@@ -5,7 +5,7 @@ type CreateFile struct {
 	Name string `json:"name"`
 }
 
-type ResponseFile struct {
+type FileResponse struct {
 	ID   uint   `json:"id"`
 	Name string `json:"name"`
 	Path string `json:"path"`

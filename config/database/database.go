@@ -2,10 +2,9 @@ package database
 
 import (
 	"github.com/MeibisuX673/lessonGin/app/model"
-	"github.com/joho/godotenv"
+	"github.com/MeibisuX673/lessonGin/config/environment"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
-	"os"
 )
 
 var AppDatabase Database
@@ -15,10 +14,6 @@ type Database struct {
 }
 
 func (db *Database) Init() (*Database, error) {
-
-	if err := godotenv.Load(); err != nil {
-		panic(err.Error())
-	}
 
 	err := db.dbMysqlInit()
 	if err != nil {
@@ -35,7 +30,7 @@ func (db *Database) dbMysqlInit() error {
 
 	var err error
 
-	db.BD, err = gorm.Open(mysql.Open(os.Getenv("DATABASE_URL")), &gorm.Config{})
+	db.BD, err = gorm.Open(mysql.Open(environment.Env.GetEnv("DATABASE_URL")), &gorm.Config{})
 	if err != nil {
 		return err
 	}

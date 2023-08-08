@@ -10,7 +10,14 @@ import (
 	"strconv"
 )
 
-func SendRegistration(toEmail string) {
+type EmailService struct {
+}
+
+func New() *EmailService {
+	return &EmailService{}
+}
+
+func (es *EmailService) SendRegistration(toEmail string) {
 
 	from := environment.Env.GetEnv("FROM_MAIL")
 	password := environment.Env.GetEnv("PASSWORD")

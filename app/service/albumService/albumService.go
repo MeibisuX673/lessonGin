@@ -4,68 +4,37 @@ import (
 	"encoding/json"
 	dto "github.com/MeibisuX673/lessonGin/app/controller/model"
 	"github.com/MeibisuX673/lessonGin/app/model"
-	"github.com/MeibisuX673/lessonGin/app/service/artistService"
-	"github.com/MeibisuX673/lessonGin/app/service/fileService"
-	"github.com/MeibisuX673/lessonGin/app/service/queryService"
-	"github.com/MeibisuX673/lessonGin/config/database"
-	"gorm.io/gorm/clause"
+	"github.com/MeibisuX673/lessonGin/app/repository"
 	"net/http"
 )
 
-func CreateAlbum(albumRequest dto.CreateAlbum) (*dto.ResponseAlbum, dto.ErrorInterface) {
+type AlbumService struct {
+	AlbumRepository repository.AlbumRepositoryInterface
+}
 
-	db := database.AppDatabase.BD
+func New(albumRepository repository.AlbumRepositoryInterface) *AlbumService {
 
-	album := model.Album{
-		Title:    albumRequest.Title,
-		ArtistID: albumRequest.ArtistID,
-		Price:    albumRequest.Price,
+	return &AlbumService{AlbumRepository: albumRepository}
+}
+
+func (as *AlbumService) CreateAlbum(albumRequest dto.AlbumCreate) (*dto.AlbumResponse, dto.ErrorInterface) {
+
+	album, err := as.AlbumRepository.Create(albumRequest)
+	if err != nil {
+		return nil, err
 	}
 
-	if albumRequest.FileId != nil {
-
-		file, err := fileService.GetFileById(*albumRequest.FileId)
-		if err != nil {
-			return nil, err
-		}
-
-		fileId := file.ID
-		album.FileID = &fileId
-
-	}
-
-	result := db.Create(&album)
-
-	if result.Error != nil {
-		return nil, &dto.Error{
-			Status:  http.StatusInternalServerError,
-			Message: result.Error.Error(),
-		}
-	}
-
-	response := convertToOneAlbumResponse(album)
+	response := convertToOneAlbumResponse(*album)
 
 	return &response, nil
 
 }
 
-func GetCollectionAlbum(query model.Query) ([]dto.ResponseAlbum, *dto.Error) {
+func (as *AlbumService) GetCollectionAlbum(query model.Query) ([]dto.AlbumResponse, dto.ErrorInterface) {
 
-	db := database.AppDatabase.BD
-
-	var albums []model.Album
-
-	result := db.Preload(clause.Associations)
-
-	queryService.ConfigurationDbQuery(result, query)
-
-	result.Find(&albums)
-
-	if result.Error != nil {
-		return nil, &dto.Error{
-			Status:  http.StatusInternalServerError,
-			Message: result.Error.Error(),
-		}
+	albums, err := as.AlbumRepository.GetAll(query)
+	if err != nil {
+		return nil, err
 	}
 
 	response := convertToAlbumResponseCollection(albums)
@@ -74,37 +43,20 @@ func GetCollectionAlbum(query model.Query) ([]dto.ResponseAlbum, *dto.Error) {
 
 }
 
-func GetAlbumById(id int) (*dto.ResponseAlbum, dto.ErrorInterface) {
+func (as *AlbumService) GetAlbumById(id uint) (*dto.AlbumResponse, dto.ErrorInterface) {
 
-	db := database.AppDatabase.BD
-
-	var album model.Album
-
-	result := db.Preload(clause.Associations).First(&album, id)
-
-	if result.RowsAffected == 0 {
-		return nil, &dto.Error{
-			Status:  http.StatusNotFound,
-			Message: "Альбом не найден",
-		}
+	album, err := as.AlbumRepository.GetById(id)
+	if err != nil {
+		return nil, err
 	}
 
-	if result.Error != nil {
-		return nil, &dto.Error{
-			Status:  http.StatusInternalServerError,
-			Message: result.Error.Error(),
-		}
-	}
-
-	response := convertToOneAlbumResponse(album)
+	response := convertToOneAlbumResponse(*album)
 
 	return &response, nil
 
 }
 
-func UpdateAlbum(id int, albumUpdate dto.UpdateAlbum) (*dto.ResponseAlbum, dto.ErrorInterface) {
-
-	db := database.AppDatabase.BD
+func (as *AlbumService) UpdateAlbum(id uint, albumUpdate dto.UpdateAlbum) (*dto.AlbumResponse, dto.ErrorInterface) {
 
 	var albumUpdateMap map[string]interface{}
 
@@ -119,66 +71,39 @@ func UpdateAlbum(id int, albumUpdate dto.UpdateAlbum) (*dto.ResponseAlbum, dto.E
 
 	sortMap := checkNil(albumUpdateMap)
 
-	var album model.Album
-
-	tx := db.First(&album, id)
-
-	if tx.RowsAffected == 0 {
-		return nil, &dto.Error{
-			Status:  http.StatusNotFound,
-			Message: "альбом не найден",
-		}
+	album, errUpdate := as.AlbumRepository.Update(id, sortMap)
+	if errUpdate != nil {
+		return nil, errUpdate
 	}
 
-	if albumUpdate.ArtistID != nil {
-		if _, err := artistService.GetArtistById(*albumUpdate.ArtistID); err != nil {
-			return nil, err
-		}
-	}
-
-	result := db.Model(&album).Updates(sortMap)
-
-	if result.Error != nil {
-		return nil, &dto.Error{
-			Status:  http.StatusInternalServerError,
-			Message: result.Error.Error(),
-		}
-	}
-
-	response := convertToOneAlbumResponse(album)
+	response := convertToOneAlbumResponse(*album)
 
 	return &response, nil
 
 }
 
-func DeleteAlbum(id int) dto.ErrorInterface {
+func (as *AlbumService) GetBy(arguments map[string]interface{}) ([]dto.AlbumResponse, dto.ErrorInterface) {
 
-	db := database.AppDatabase.BD
-
-	var album model.Album
-
-	if count := db.First(&album, id).RowsAffected; count == 0 {
-		return &dto.Error{
-			Status:  http.StatusNotFound,
-			Message: "Album not found",
-		}
+	albums, err := as.AlbumRepository.FindBy(arguments)
+	if err != nil {
+		return nil, err
 	}
 
-	if album.File != nil {
+	response := convertToAlbumResponseCollection(albums)
 
-		if err := fileService.DeleteFileFromDisk([]model.File{*album.File}); err != nil {
-			return err
-		}
+	return response, nil
 
+}
+
+func (as *AlbumService) DeleteAlbum(id uint) dto.ErrorInterface {
+
+	_, err := as.AlbumRepository.GetById(id)
+	if err != nil {
+		return err
 	}
 
-	result := db.Unscoped().Delete(&model.Album{}, id)
-
-	if result.Error != nil {
-		return &dto.Error{
-			Status:  http.StatusInternalServerError,
-			Message: result.Error.Error(),
-		}
+	if err := as.AlbumRepository.Delete(id); err != nil {
+		return err
 	}
 
 	return nil

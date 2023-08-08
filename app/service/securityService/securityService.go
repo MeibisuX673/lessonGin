@@ -11,7 +11,7 @@ import (
 	"strings"
 )
 
-func GetCurrentUser(c *gin.Context) dto.ResponseArtist {
+func GetCurrentUser(c *gin.Context) dto.ArtistResponse {
 
 	tokenString := c.GetHeader("Authorization")
 

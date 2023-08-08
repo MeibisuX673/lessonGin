@@ -5,15 +5,15 @@ import (
 	"github.com/MeibisuX673/lessonGin/app/model"
 )
 
-func convertToArtistResponseCollection(artists []model.Artist) (responseArtists []dto.ResponseArtist) {
+func convertToArtistResponseCollection(artists []model.Artist) (responseArtists []dto.ArtistResponse) {
 
-	var responseFiles []dto.ResponseFile
-	var responseAlbum []dto.ResponseAlbum
+	var responseFiles []dto.FileResponse
+	var responseAlbum []dto.AlbumResponse
 
 	for _, artist := range artists {
 		if artist.Files != nil {
 			for _, file := range artist.Files {
-				responseFiles = append(responseFiles, dto.ResponseFile{
+				responseFiles = append(responseFiles, dto.FileResponse{
 					ID:   file.ID,
 					Name: file.Name,
 					Path: file.Path,
@@ -22,14 +22,14 @@ func convertToArtistResponseCollection(artists []model.Artist) (responseArtists 
 		}
 		if artist.Albums != nil {
 			for _, album := range artist.Albums {
-				responseAlbum = append(responseAlbum, dto.ResponseAlbum{
+				responseAlbum = append(responseAlbum, dto.AlbumResponse{
 					Id:    album.ID,
 					Title: album.Title,
 					Price: album.Price,
 				})
 			}
 		}
-		responseArtists = append(responseArtists, dto.ResponseArtist{
+		responseArtists = append(responseArtists, dto.ArtistResponse{
 			ID:     artist.ID,
 			Name:   artist.Name,
 			Age:    artist.Age,
@@ -42,14 +42,14 @@ func convertToArtistResponseCollection(artists []model.Artist) (responseArtists 
 
 }
 
-func ConvertToOneArtistResponse(artist model.Artist) (responseArtist dto.ResponseArtist) {
+func ConvertToOneArtistResponse(artist model.Artist) (responseArtist dto.ArtistResponse) {
 
-	var responseFiles []dto.ResponseFile
-	var responseAlbum []dto.ResponseAlbum
+	var responseFiles []dto.FileResponse
+	var responseAlbum []dto.AlbumResponse
 
 	if artist.Files != nil {
 		for _, file := range artist.Files {
-			responseFiles = append(responseFiles, dto.ResponseFile{
+			responseFiles = append(responseFiles, dto.FileResponse{
 				ID:   file.ID,
 				Name: file.Name,
 				Path: file.Path,
@@ -59,7 +59,7 @@ func ConvertToOneArtistResponse(artist model.Artist) (responseArtist dto.Respons
 
 	if artist.Albums != nil {
 		for _, album := range artist.Albums {
-			responseAlbum = append(responseAlbum, dto.ResponseAlbum{
+			responseAlbum = append(responseAlbum, dto.AlbumResponse{
 				Id:    album.ID,
 				Title: album.Title,
 				Price: album.Price,
@@ -67,7 +67,7 @@ func ConvertToOneArtistResponse(artist model.Artist) (responseArtist dto.Respons
 		}
 	}
 
-	responseArtist = dto.ResponseArtist{
+	responseArtist = dto.ArtistResponse{
 		ID:     artist.ID,
 		Name:   artist.Name,
 		Age:    artist.Age,

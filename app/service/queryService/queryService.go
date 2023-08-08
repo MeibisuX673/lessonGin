@@ -4,12 +4,18 @@ import (
 	"fmt"
 	"github.com/MeibisuX673/lessonGin/app/model"
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 	"strconv"
 	"strings"
 )
 
-func GetQueries(c *gin.Context) *model.Query {
+type QueryService struct {
+}
+
+func New() *QueryService {
+	return &QueryService{}
+}
+
+func (qs *QueryService) GetQueries(c *gin.Context) *model.Query {
 
 	var query model.Query = model.Query{}
 
@@ -81,29 +87,4 @@ func GetQueries(c *gin.Context) *model.Query {
 	}
 
 	return &query
-}
-
-func ConfigurationDbQuery(db *gorm.DB, query model.Query) {
-
-	if query.Filters != nil {
-		for _, value := range query.Filters {
-			db.Where(value)
-		}
-	}
-	if query.RangeFilters != nil {
-		for _, value := range query.RangeFilters {
-			db.Where(value)
-		}
-	}
-
-	if query.Orders != nil {
-		for _, value := range query.Orders {
-			db.Order(value)
-		}
-	}
-
-	db.Offset(int(query.Page*query.Limit - query.Limit))
-
-	db.Limit(int(query.Limit))
-
 }

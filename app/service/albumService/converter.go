@@ -5,21 +5,21 @@ import (
 	"github.com/MeibisuX673/lessonGin/app/model"
 )
 
-func convertToAlbumResponseCollection(albums []model.Album) (responseAlbum []dto.ResponseAlbum) {
+func convertToAlbumResponseCollection(albums []model.Album) (responseAlbum []dto.AlbumResponse) {
 
-	var file *dto.ResponseFile
+	var file *dto.FileResponse
 
 	for _, album := range albums {
 
 		if album.File != nil {
-			file = &dto.ResponseFile{
+			file = &dto.FileResponse{
 				ID:   album.File.ID,
 				Name: album.File.Name,
 				Path: album.File.Path,
 			}
 		}
 
-		responseAlbum = append(responseAlbum, dto.ResponseAlbum{
+		responseAlbum = append(responseAlbum, dto.AlbumResponse{
 			Id:       album.ID,
 			Title:    album.Title,
 			Price:    album.Price,
@@ -32,19 +32,19 @@ func convertToAlbumResponseCollection(albums []model.Album) (responseAlbum []dto
 
 }
 
-func convertToOneAlbumResponse(album model.Album) (responseAlbum dto.ResponseAlbum) {
+func convertToOneAlbumResponse(album model.Album) (responseAlbum dto.AlbumResponse) {
 
-	var file *dto.ResponseFile
+	var file *dto.FileResponse
 
 	if album.File != nil {
-		file = &dto.ResponseFile{
+		file = &dto.FileResponse{
 			ID:   album.File.ID,
 			Name: album.File.Name,
 			Path: album.File.Path,
 		}
 	}
 
-	responseAlbum = dto.ResponseAlbum{
+	responseAlbum = dto.AlbumResponse{
 		Id:       album.ID,
 		Title:    album.Title,
 		Price:    album.Price,

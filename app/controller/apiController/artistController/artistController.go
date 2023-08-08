@@ -2,8 +2,12 @@ package artistController
 
 import (
 	dto "github.com/MeibisuX673/lessonGin/app/controller/model"
+	"github.com/MeibisuX673/lessonGin/app/service/albumService"
 	"github.com/MeibisuX673/lessonGin/app/service/emailService"
+	"github.com/MeibisuX673/lessonGin/app/service/fileService"
 	"github.com/MeibisuX673/lessonGin/app/service/queryService"
+	"github.com/MeibisuX673/lessonGin/app/service/securityService"
+	"github.com/go-playground/validator/v10"
 	"net/http"
 	"strconv"
 
@@ -12,6 +16,11 @@ import (
 )
 
 type ArtistController struct {
+	ArtistService *artistService.ArtistService
+	QueryService  *queryService.QueryService
+	FileService   *fileService.FileService
+	AlbumService  *albumService.AlbumService
+	EmailService  *emailService.EmailService
 }
 
 // POSTArtist  Create Artist
@@ -21,30 +30,50 @@ type ArtistController struct {
 //		@Tags			artists
 //		@Accept			json
 //		@Produce		json
-//	    @Param 	body body dto.CreateArtist true "body"
-//		@Success		201	{object}    dto.ResponseArtist
+//	    @Param 	body body dto.ArtistCreate true "body"
+//		@Success		201	{object}    dto.ArtistResponse
 //		@Failure		400	{object}	dto.Error
 //		@Failure		404	{object}	dto.Error
 //		@Failure		500	{object}	dto.Error
 //		@Router			/artists [post]
 func (ac *ArtistController) POSTArtist(c *gin.Context) {
 
-	var createArtist = dto.CreateArtist{}
+	var createArtist = dto.ArtistCreate{}
 
 	if err := c.BindJSON(&createArtist); err != nil {
 		c.JSON(http.StatusBadRequest, dto.Error{
 			Status:  http.StatusBadRequest,
 			Message: err.Error(),
 		})
+		return
 	}
 
-	artist, err := artistService.CreateArtist(&createArtist)
+	validate := validator.New()
+	if err := validate.Struct(createArtist); err != nil {
+		c.JSON(http.StatusBadRequest, dto.Error{
+			Status:  http.StatusBadRequest,
+			Message: err.Error(),
+		})
+		return
+	}
+
+	if createArtist.FileIds != nil {
+		for _, fileId := range createArtist.FileIds {
+			_, err := ac.FileService.GetFileById(fileId)
+			if err != nil {
+				c.JSON(err.GetStatus(), err)
+				return
+			}
+		}
+	}
+
+	artist, err := ac.ArtistService.CreateArtist(&createArtist)
 	if err != nil {
 		c.JSON(err.GetStatus(), err)
 		return
 	}
 
-	emailService.SendRegistration(createArtist.Email)
+	ac.EmailService.SendRegistration(createArtist.Email)
 
 	c.JSON(http.StatusCreated, artist)
 
@@ -65,14 +94,14 @@ func (ac *ArtistController) POSTArtist(c *gin.Context) {
 //		@Param range[age][lt] query string false "range[age][lt]"
 //		@Accept			json
 //		@Produce		json
-//		@Success		200	{array}	    dto.ResponseArtist
+//		@Success		200	{array}	    dto.ArtistResponse
 //		@Failure		500	{object}	dto.Error
 //		@Router			/artists [get]
 func (ac *ArtistController) GETCollectionArtist(c *gin.Context) {
 
-	queries := queryService.GetQueries(c)
+	queries := ac.QueryService.GetQueries(c)
 
-	artists, err := artistService.GetCollectionArtist(*queries)
+	artists, err := ac.ArtistService.GetCollectionArtist(*queries)
 	if err != nil {
 		c.JSON(err.GetStatus(), err)
 		return
@@ -90,7 +119,7 @@ func (ac *ArtistController) GETCollectionArtist(c *gin.Context) {
 //		@Accept			json
 //		@Produce		json
 //		@param id path int true "id"
-//		@Success		200	{object}	    dto.ResponseArtist
+//		@Success		200	{object}	    dto.ArtistResponse
 //		@Failure		400	{object}	dto.Error
 //		@Failure		404	{object}	dto.Error
 //		@Failure		500	{object}	dto.Error
@@ -108,13 +137,13 @@ func (ac *ArtistController) GETArtistById(c *gin.Context) {
 		return
 	}
 
-	artist, errGetArtistById := artistService.GetArtistById(uint(artistId))
+	artist, errGetArtistById := ac.ArtistService.GetArtistById(uint(artistId))
 	if errGetArtistById != nil {
 		c.JSON(errGetArtistById.GetStatus(), errGetArtistById)
 		return
 	}
 
-	c.IndentedJSON(http.StatusOK, artist)
+	c.JSON(http.StatusOK, artist)
 
 }
 
@@ -128,7 +157,7 @@ func (ac *ArtistController) GETArtistById(c *gin.Context) {
 //			@Produce		json
 //			@param id path int true "id"
 //		    @param body body dto.UpdateArtist true "body"
-//			@Success		200	{object}	    dto.ResponseArtist
+//			@Success		200	{object}	    dto.ArtistResponse
 //			@Failure		400	{object}	dto.Error
 //			@Failure		404	{object}	dto.Error
 //			@Failure		500	{object}	dto.Error
@@ -143,7 +172,16 @@ func (ac *ArtistController) PUTArtist(c *gin.Context) {
 			Message: "id должно быть числом",
 		})
 		return
+	}
 
+	currentArtist := securityService.GetCurrentUser(c)
+
+	if currentArtist.ID != uint(id) {
+		c.JSON(http.StatusForbidden, dto.Error{
+			Status:  http.StatusForbidden,
+			Message: "Access Denied",
+		})
+		return
 	}
 
 	var updateArtist dto.UpdateArtist
@@ -155,8 +193,7 @@ func (ac *ArtistController) PUTArtist(c *gin.Context) {
 		})
 	}
 
-	artist, errUpdateArtist := artistService.UpdateArtist(id, updateArtist)
-
+	artist, errUpdateArtist := ac.ArtistService.UpdateArtist(uint(id), updateArtist)
 	if errUpdateArtist != nil {
 		c.JSON(errUpdateArtist.GetStatus(), errUpdateArtist)
 		return
@@ -191,22 +228,66 @@ func (ac *ArtistController) DELETEArtist(c *gin.Context) {
 		return
 	}
 
-	//artist := securityService.GetCurrentUser(c)
-	//
-	//if artist.ID != uint(id) {
-	//	c.JSON(http.StatusForbidden, dto.Error{
-	//		Status:  http.StatusForbidden,
-	//		Message: "Access Denied",
-	//	})
-	//	return
-	//}
+	artist := securityService.GetCurrentUser(c)
 
-	if err := artistService.DeleteArtist(uint(id)); err != nil {
+	if artist.ID != uint(id) {
+		c.JSON(http.StatusForbidden, dto.Error{
+			Status:  http.StatusForbidden,
+			Message: "Access Denied",
+		})
+		return
+	}
+
+	if err := ac.deleteFiles(artist); err != nil {
 		c.JSON(err.GetStatus(), err)
 		return
+	}
 
+	if err := ac.ArtistService.DeleteArtist(uint(id)); err != nil {
+		c.JSON(err.GetStatus(), err)
+		return
 	}
 
 	c.Status(http.StatusNoContent)
+
+}
+
+func (ac *ArtistController) deleteFiles(artist dto.ArtistResponse) dto.ErrorInterface {
+
+	artistFiles, errGetFiles := ac.FileService.GetBy(map[string]interface{}{
+		"artist_id": artist.ID,
+	})
+	if errGetFiles != nil {
+		return errGetFiles
+	}
+
+	albums, errGetAlbums := ac.AlbumService.GetBy(map[string]interface{}{
+		"artist_id": artist.ID,
+	})
+	if errGetAlbums != nil {
+		return errGetAlbums
+	}
+
+	var albumIds []uint
+	for _, album := range albums {
+		albumIds = append(albumIds, album.Id)
+	}
+
+	albumFiles, errGetFiles := ac.FileService.GetBy(map[string]interface{}{
+		"album_id": albumIds,
+	})
+	if errGetFiles != nil {
+		return errGetFiles
+	}
+
+	if err := ac.FileService.DeleteFileFromDisk(artistFiles); err != nil {
+		return err
+	}
+
+	if err := ac.FileService.DeleteFileFromDisk(albumFiles); err != nil {
+		return err
+	}
+
+	return nil
 
 }

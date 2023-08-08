@@ -1,29 +1,30 @@
 package artistService
 
 import (
-	"context"
 	"encoding/json"
+	"github.com/MeibisuX673/lessonGin/app/Helper"
 	dto "github.com/MeibisuX673/lessonGin/app/controller/model"
 	"github.com/MeibisuX673/lessonGin/app/model"
-	"github.com/MeibisuX673/lessonGin/app/service/fileService"
-	"github.com/MeibisuX673/lessonGin/app/service/hashPasswordService"
-	"github.com/MeibisuX673/lessonGin/app/service/queryService"
-	"github.com/MeibisuX673/lessonGin/config/database"
-	"gorm.io/gorm/clause"
+	"github.com/MeibisuX673/lessonGin/app/repository"
 	"net/http"
 )
 
-func CreateArtist(artistRequest *dto.CreateArtist) (*dto.ResponseArtist, dto.ErrorInterface) {
+type ArtistService struct {
+	ArtistRepository repository.ArtistRepositoryInterface
+}
 
-	db := database.AppDatabase.BD
+func New(
+	artistRepository repository.ArtistRepositoryInterface,
+) *ArtistService {
 
-	artist := model.Artist{
-		Name:  artistRequest.Name,
-		Age:   artistRequest.Age,
-		Email: artistRequest.Email,
+	return &ArtistService{
+		ArtistRepository: artistRepository,
 	}
+}
 
-	hashedPassword, err := hashPasswordService.HashPassword(artistRequest.Password)
+func (as *ArtistService) CreateArtist(artistRequest *dto.ArtistCreate) (*dto.ArtistResponse, dto.ErrorInterface) {
+
+	hashedPassword, err := Helper.HashPassword(artistRequest.Password)
 	if err != nil {
 		return nil, &dto.Error{
 			Status:  http.StatusInternalServerError,
@@ -31,50 +32,24 @@ func CreateArtist(artistRequest *dto.CreateArtist) (*dto.ResponseArtist, dto.Err
 		}
 	}
 
-	artist.Password = hashedPassword
+	artistRequest.Password = hashedPassword
 
-	if artistRequest.FileIds != nil {
-		for _, fileId := range artistRequest.FileIds {
-
-			_, err := fileService.GetFileById(fileId)
-
-			if err != nil {
-				return nil, err
-			}
-
-		}
+	artist, errCreate := as.ArtistRepository.Create(artistRequest)
+	if errCreate != nil {
+		return nil, errCreate
 	}
 
-	if result := db.Create(&artist); result.Error != nil {
-		return nil, &dto.Error{
-			Status:  http.StatusInternalServerError,
-			Message: result.Error.Error(),
-		}
-	}
-
-	response := ConvertToOneArtistResponse(artist)
+	response := ConvertToOneArtistResponse(*artist)
 
 	return &response, nil
 
 }
 
-func GetCollectionArtist(query model.Query) ([]dto.ResponseArtist, dto.ErrorInterface) {
+func (as *ArtistService) GetCollectionArtist(query model.Query) ([]dto.ArtistResponse, dto.ErrorInterface) {
 
-	var artists []model.Artist
-
-	db := database.AppDatabase.BD
-
-	result := db.Preload(clause.Associations)
-
-	queryService.ConfigurationDbQuery(result, query)
-
-	result.Find(&artists)
-
-	if result.Error != nil {
-		return nil, &dto.Error{
-			Status:  http.StatusInternalServerError,
-			Message: result.Error.Error(),
-		}
+	artists, err := as.ArtistRepository.GetAll(query)
+	if err != nil {
+		return nil, err
 	}
 
 	response := convertToArtistResponseCollection(artists)
@@ -83,35 +58,33 @@ func GetCollectionArtist(query model.Query) ([]dto.ResponseArtist, dto.ErrorInte
 
 }
 
-func GetArtistById(id uint) (*dto.ResponseArtist, dto.ErrorInterface) {
+func (as *ArtistService) GetArtistById(id uint) (*dto.ArtistResponse, dto.ErrorInterface) {
 
-	var artist model.Artist
-
-	db := database.AppDatabase.BD
-
-	err := db.Preload(clause.Associations).First(&artist, id).Error
-
-	if artist.ID == 0 {
-		return nil, &dto.Error{
-			Status:  http.StatusNotFound,
-			Message: "Артист не найден",
-		}
-	}
-
+	artist, err := as.ArtistRepository.GetById(id)
 	if err != nil {
-		return nil, &dto.Error{
-			Status:  http.StatusInternalServerError,
-			Message: err.Error(),
-		}
+		return nil, err
 	}
 
-	response := ConvertToOneArtistResponse(artist)
+	response := ConvertToOneArtistResponse(*artist)
 
 	return &response, nil
 
 }
 
-func UpdateArtist(id int, updateArtist dto.UpdateArtist) (*dto.ResponseArtist, dto.ErrorInterface) {
+func (as *ArtistService) GetOneBy(arguments map[string]interface{}) (*dto.ArtistResponse, dto.ErrorInterface) {
+
+	artist, err := as.ArtistRepository.FindOneBy(arguments)
+	if err != nil {
+		return nil, err
+	}
+
+	response := ConvertToOneArtistResponse(*artist)
+
+	return &response, nil
+
+}
+
+func (as *ArtistService) UpdateArtist(id uint, updateArtist dto.UpdateArtist) (*dto.ArtistResponse, dto.ErrorInterface) {
 
 	var artistUpdateMap map[string]interface{}
 
@@ -126,55 +99,25 @@ func UpdateArtist(id int, updateArtist dto.UpdateArtist) (*dto.ResponseArtist, d
 
 	sortMap := checkNil(artistUpdateMap)
 
-	var artist model.Artist
-
-	db := database.AppDatabase.BD
-
-	if count := db.First(&artist, id).RowsAffected; count == 0 {
-		return nil, &dto.Error{
-			Status:  http.StatusNotFound,
-			Message: "Артист не найден",
-		}
+	artist, err := as.ArtistRepository.Update(id, sortMap)
+	if err != nil {
+		return nil, err
 	}
 
-	if err := db.Model(&artist).Updates(sortMap).Error; err != nil {
-		return nil, &dto.Error{
-			Status:  http.StatusInternalServerError,
-			Message: err.Error(),
-		}
-	}
-
-	response := ConvertToOneArtistResponse(artist)
+	response := ConvertToOneArtistResponse(*artist)
 
 	return &response, nil
 
 }
 
-func DeleteArtist(id uint) dto.ErrorInterface {
+func (as *ArtistService) DeleteArtist(id uint) dto.ErrorInterface {
 
-	db := database.AppDatabase.BD
-
-	var artist model.Artist
-
-	if count := db.Preload(clause.Associations).First(&artist, id).RowsAffected; count == 0 {
-		return &dto.Error{
-			Status:  http.StatusNotFound,
-			Message: "Артист не найден",
-		}
-	}
-
-	if err := deleteFiles(artist); err != nil {
+	_, err := as.ArtistRepository.GetById(id)
+	if err != nil {
 		return err
 	}
 
-	if err := clearAssociations(&artist); err != nil {
-		return err
-	}
-
-	tx := db.WithContext(context.Background())
-
-	err := tx.Delete(&artist).Error
-
+	err = as.ArtistRepository.Delete(id)
 	if err != nil {
 		return &dto.Error{
 			Status:  http.StatusInternalServerError,
@@ -197,63 +140,5 @@ func checkNil(args map[string]interface{}) map[string]interface{} {
 	}
 
 	return sortNil
-
-}
-
-func clearAssociations(artist *model.Artist) dto.ErrorInterface {
-
-	db := database.AppDatabase.BD
-
-	//TODO Посмотреть удаление сущьностей файла связанные с альбомом
-	if err := db.Unscoped().Model(artist).Association("Albums").Unscoped().Clear(); err != nil {
-		return &dto.Error{
-			Status:  http.StatusInternalServerError,
-			Message: err.Error(),
-		}
-	}
-
-	tx := db.WithContext(context.Background())
-
-	if err := tx.Unscoped().Model(artist).Association("Files").Unscoped().Clear(); err != nil {
-		return &dto.Error{
-			Status:  http.StatusInternalServerError,
-			Message: err.Error(),
-		}
-	}
-
-	return nil
-
-}
-
-func deleteFiles(artist model.Artist) dto.ErrorInterface {
-
-	var artistFiles []model.File
-	var albumFiles []model.File
-
-	db := database.AppDatabase.BD
-
-	if artist.Files != nil {
-		db := database.AppDatabase.BD
-		db.Where("artist_id = ?", artist.ID).Find(&artistFiles)
-		if err := fileService.DeleteFileFromDisk(artist.Files); err != nil {
-			return err
-		}
-	}
-
-	if artist.Albums != nil {
-		for _, album := range artist.Albums {
-			if album.FileID != nil {
-				var filesModel []model.File
-				db.Find(&filesModel, album.FileID)
-				albumFiles = append(albumFiles, filesModel...)
-			}
-
-		}
-		if err := fileService.DeleteFileFromDisk(albumFiles); err != nil {
-			return err
-		}
-	}
-
-	return nil
 
 }

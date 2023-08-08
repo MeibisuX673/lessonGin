@@ -1,14 +1,23 @@
 package authService
 
 import (
+	"github.com/MeibisuX673/lessonGin/app/Helper"
 	dto "github.com/MeibisuX673/lessonGin/app/controller/model"
 	"github.com/MeibisuX673/lessonGin/app/model"
-	"github.com/MeibisuX673/lessonGin/app/service/hashPasswordService"
+	"github.com/MeibisuX673/lessonGin/app/repository"
 	"github.com/MeibisuX673/lessonGin/config/database"
 	"net/http"
 )
 
-func CheckUser(auth dto.Auth) (*model.Artist, dto.ErrorInterface) {
+type AuthService struct {
+	ArtistRepository repository.ArtistRepositoryInterface
+}
+
+func New(artistRepository repository.ArtistRepositoryInterface) *AuthService {
+	return &AuthService{ArtistRepository: artistRepository}
+}
+
+func (authS *AuthService) CheckUser(auth dto.Auth) (*model.Artist, dto.ErrorInterface) {
 
 	var artist model.Artist
 
@@ -23,10 +32,10 @@ func CheckUser(auth dto.Auth) (*model.Artist, dto.ErrorInterface) {
 		}
 	}
 
-	if hashPasswordService.CheckHashPassword(auth.Password, artist.Password) {
+	if Helper.CheckHashPassword(auth.Password, artist.Password) {
 		return nil, &dto.Error{
 			Status:  http.StatusBadRequest,
-			Message: "Не правильный пароль",
+			Message: "Неправильный пароль",
 		}
 	}
 

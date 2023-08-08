@@ -2,11 +2,21 @@ package router
 
 import (
 	"github.com/MeibisuX673/lessonGin/app/controller"
-	"github.com/MeibisuX673/lessonGin/app/controller/albumController"
-	"github.com/MeibisuX673/lessonGin/app/controller/artistController"
-	"github.com/MeibisuX673/lessonGin/app/controller/authController"
-	"github.com/MeibisuX673/lessonGin/app/controller/fileController"
+	"github.com/MeibisuX673/lessonGin/app/controller/apiController/albumController"
+	"github.com/MeibisuX673/lessonGin/app/controller/apiController/artistController"
+	"github.com/MeibisuX673/lessonGin/app/controller/apiController/authController"
+	"github.com/MeibisuX673/lessonGin/app/controller/apiController/fileController"
 	"github.com/MeibisuX673/lessonGin/app/middleware"
+	"github.com/MeibisuX673/lessonGin/app/repository/mySql/album"
+	"github.com/MeibisuX673/lessonGin/app/repository/mySql/artist"
+	"github.com/MeibisuX673/lessonGin/app/repository/mySql/file"
+	"github.com/MeibisuX673/lessonGin/app/service/albumService"
+	"github.com/MeibisuX673/lessonGin/app/service/artistService"
+	"github.com/MeibisuX673/lessonGin/app/service/authService"
+	"github.com/MeibisuX673/lessonGin/app/service/authService/jwtService"
+	"github.com/MeibisuX673/lessonGin/app/service/emailService"
+	"github.com/MeibisuX673/lessonGin/app/service/fileService"
+	"github.com/MeibisuX673/lessonGin/app/service/queryService"
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -58,11 +68,11 @@ func initAlbumRoutes(rg *gin.RouterGroup) {
 	albums := rg.Group("/albums")
 	{
 
-		albums.POST("", controllers.AlbumController.POSTAlbum)
+		albums.POST("", middleware.JwtMiddleware, controllers.AlbumController.POSTAlbum)
 		albums.GET("", controllers.AlbumController.GETCollectionAlbum)
-		albums.PUT("/:id", controllers.AlbumController.PUTAlbum)
+		albums.PUT("/:id", middleware.JwtMiddleware, controllers.AlbumController.PUTAlbum)
 		albums.GET("/:id", controllers.AlbumController.GETAlbumById)
-		albums.DELETE("/:id", controllers.AlbumController.DELETEAlbum)
+		albums.DELETE("/:id", middleware.JwtMiddleware, controllers.AlbumController.DELETEAlbum)
 
 	}
 
@@ -82,10 +92,31 @@ func initFileRoutes(rg *gin.RouterGroup) {
 func initializationController() controller.Controller {
 
 	return controller.Controller{
-		ArtistController: artistController.ArtistController{},
-		AlbumController:  albumController.AlbumController{},
-		FileController:   fileController.FileController{},
-		AuthController:   authController.AuthController{},
+
+		ArtistController: artistController.ArtistController{
+			ArtistService: artistService.New(&artist.ArtistRepository{}),
+			QueryService:  queryService.New(),
+			FileService:   fileService.New(&file.FileRepository{}),
+			AlbumService:  albumService.New(&album.AlbumRepository{}),
+			EmailService:  emailService.New(),
+		},
+
+		AlbumController: albumController.AlbumController{
+			AlbumService:  albumService.New(&album.AlbumRepository{}),
+			ArtistService: artistService.New(&artist.ArtistRepository{}),
+			QueryService:  queryService.New(),
+			FileService:   fileService.New(&file.FileRepository{}),
+		},
+
+		FileController: fileController.FileController{
+			FileService:  fileService.New(&file.FileRepository{}),
+			QueryService: queryService.New(),
+		},
+
+		AuthController: authController.AuthController{
+			AuthService: authService.New(&artist.ArtistRepository{}),
+			JWTService:  &jwtService.JWTService{},
+		},
 	}
 }
 

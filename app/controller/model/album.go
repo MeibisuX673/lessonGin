@@ -1,18 +1,18 @@
 package model
 
-type CreateAlbum struct {
+type AlbumCreate struct {
 	Title    string  `json:"title" validate:"required"`
 	ArtistID uint    `json:"artistID" validate:"required,number"`
 	Price    float64 `json:"price" validate:"required,number"`
 	FileId   *uint   `json:"file_id"`
 }
 
-type ResponseAlbum struct {
+type AlbumResponse struct {
 	Id       uint          `json:"id"`
 	Title    string        `json:"title"`
 	Price    float64       `json:"price"`
 	ArtistID uint          `json:"artistID"`
-	File     *ResponseFile `json:"file"`
+	File     *FileResponse `json:"file"`
 }
 
 type UpdateAlbum struct {

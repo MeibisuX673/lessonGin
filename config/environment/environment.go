@@ -28,3 +28,16 @@ func (e *Environment) GetEnv(key string) string {
 	return e.envMap[key]
 
 }
+
+func (e *Environment) InitForTest() error {
+
+	if err := godotenv.Load("./../.env.test"); err != nil {
+		return err
+	}
+
+	env, _ := godotenv.Read("./../.env.test")
+	Env = &Environment{envMap: env}
+
+	return nil
+
+}

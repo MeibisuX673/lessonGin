@@ -1,14 +1,17 @@
 package fileController
 
 import (
-	"github.com/MeibisuX673/lessonGin/app/controller/model"
+	dto "github.com/MeibisuX673/lessonGin/app/controller/model"
 	"github.com/MeibisuX673/lessonGin/app/service/fileService"
+	"github.com/MeibisuX673/lessonGin/app/service/queryService"
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"strconv"
 )
 
 type FileController struct {
+	FileService  *fileService.FileService
+	QueryService *queryService.QueryService
 }
 
 // POSTFile   Create File
@@ -19,32 +22,29 @@ type FileController struct {
 //		@Accept			json
 //		@Produce		json
 //		@Param file	formData file true "file"
-//		@Success		201	{object}	    model.ResponseFile
-//		@Failure		400	{object}	model.Error
-//		@Failure		404	{object}	model.Error
-//		@Failure		500	{object}	model.Error
+//		@Success		201	{object}	    dto.FileResponse
+//		@Failure		400	{object}	dto.Error
+//		@Failure		404	{object}	dto.Error
+//		@Failure		500	{object}	dto.Error
 //		@Router			/files [post]
 func (fl *FileController) POSTFile(c *gin.Context) {
 
-	file, err := fileService.UploadFile(c)
+	file, err := fl.FileService.UploadFile(c)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, model.Error{
+		c.JSON(http.StatusInternalServerError, dto.Error{
 			Status:  http.StatusInternalServerError,
 			Message: err.Error(),
 		})
 	}
 
-	var createFile model.CreateFile = model.CreateFile{
+	createFile := dto.CreateFile{
 		Name: file.Name,
 		Path: file.Path,
 	}
 
-	newFile, err := fileService.CreateFileInDatabase(createFile)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, model.Error{
-			Status:  http.StatusInternalServerError,
-			Message: err.Error(),
-		})
+	newFile, errCreate := fl.FileService.CreateFileInDatabase(createFile)
+	if errCreate != nil {
+		c.JSON(errCreate.GetStatus(), err)
 	}
 
 	c.JSON(http.StatusCreated, newFile)
@@ -59,24 +59,24 @@ func (fl *FileController) POSTFile(c *gin.Context) {
 //		@Accept			json
 //		@Produce		json
 //		@Param id path int true "id"
-//		@Success		200	{object}	model.ResponseFile
-//		@Failure		400	{object}	model.Error
-//		@Failure		404	{object}	model.Error
-//		@Failure		500	{object}	model.Error
+//		@Success		200	{object}	dto.FileResponse
+//		@Failure		400	{object}	dto.Error
+//		@Failure		404	{object}	dto.Error
+//		@Failure		500	{object}	dto.Error
 //		@Router			/files/{id} [get]
 func (fl *FileController) GETFileById(c *gin.Context) {
 
 	id, err := strconv.Atoi(c.Param("id"))
 
 	if err != nil {
-		c.JSON(http.StatusBadRequest, model.Error{
+		c.JSON(http.StatusBadRequest, dto.Error{
 			Status:  http.StatusBadRequest,
 			Message: "id должно быть числом",
 		})
 		return
 	}
 
-	file, errGetFileById := fileService.GetFileById(uint(id))
+	file, errGetFileById := fl.FileService.GetFileById(uint(id))
 
 	if errGetFileById != nil {
 		c.JSON(errGetFileById.GetStatus(), errGetFileById)
@@ -90,16 +90,20 @@ func (fl *FileController) GETFileById(c *gin.Context) {
 // GETFileCollection     Get Collection File
 //
 //	 @Summary		Get Collection File
+//		@Param page query string true "page" default(1)
+//		@Param limit query string false "limit" default(5)
 //		@Description	Get Collection File
 //		@Tags			files
 //		@Accept			json
 //		@Produce		json
-//		@Success		200	{object}	model.ResponseFile
-//		@Failure		500	{object}	model.Error
+//		@Success		200	{object}	dto.FileResponse
+//		@Failure		500	{object}	dto.Error
 //		@Router			/files [get]
 func (fl *FileController) GETFileCollection(c *gin.Context) {
 
-	files, err := fileService.GetFileCollection()
+	queries := fl.QueryService.GetQueries(c)
+
+	files, err := fl.FileService.GetFileCollection(*queries)
 
 	if err != nil {
 		c.JSON(err.GetStatus(), err)
@@ -119,23 +123,23 @@ func (fl *FileController) GETFileCollection(c *gin.Context) {
 //		@Accept			json
 //		@Produce		json
 //		@Success		204
-//		@Failure		400	{object}	model.Error
-//		@Failure		404	{object}	model.Error
-//		@Failure		500	{object}	model.Error
+//		@Failure		400	{object}	dto.Error
+//		@Failure		404	{object}	dto.Error
+//		@Failure		500	{object}	dto.Error
 //		@Router			/files/{id} [delete]
 func (fl *FileController) DELETEFile(c *gin.Context) {
 
 	id, err := strconv.Atoi(c.Param("id"))
 
 	if err != nil {
-		c.JSON(http.StatusBadRequest, model.Error{
+		c.JSON(http.StatusBadRequest, dto.Error{
 			Status:  http.StatusBadRequest,
 			Message: "id должно быть числом",
 		})
 		return
 	}
 
-	if err := fileService.DeleteFile(uint(id)); err != nil {
+	if err := fl.FileService.DeleteFile(uint(id)); err != nil {
 		c.JSON(err.GetStatus(), err)
 	}
 

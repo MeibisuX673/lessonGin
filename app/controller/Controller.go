@@ -1,10 +1,10 @@
 package controller
 
 import (
-	"github.com/MeibisuX673/lessonGin/app/controller/albumController"
-	"github.com/MeibisuX673/lessonGin/app/controller/artistController"
-	"github.com/MeibisuX673/lessonGin/app/controller/authController"
-	"github.com/MeibisuX673/lessonGin/app/controller/fileController"
+	"github.com/MeibisuX673/lessonGin/app/controller/apiController/albumController"
+	"github.com/MeibisuX673/lessonGin/app/controller/apiController/artistController"
+	"github.com/MeibisuX673/lessonGin/app/controller/apiController/authController"
+	"github.com/MeibisuX673/lessonGin/app/controller/apiController/fileController"
 )
 
 type Controller struct {

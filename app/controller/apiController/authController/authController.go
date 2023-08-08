@@ -10,6 +10,8 @@ import (
 )
 
 type AuthController struct {
+	AuthService *authService.AuthService
+	JWTService  *jwtService.JWTService
 }
 
 // Auth
@@ -47,13 +49,13 @@ func (au *AuthController) Auth(c *gin.Context) {
 		return
 	}
 
-	artist, err := authService.CheckUser(auth)
+	artist, err := au.AuthService.CheckUser(auth)
 	if err != nil {
 		c.JSON(err.GetStatus(), err)
 		return
 	}
 
-	jwtToken, err := jwtService.CreateJwtToken(*artist)
+	jwtToken, err := au.JWTService.CreateJwtToken(*artist)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.Error{
 			Status:  http.StatusInternalServerError,
