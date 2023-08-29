@@ -16,7 +16,6 @@ type ArtistRepository struct {
 func (ar *ArtistRepository) Create(createArtist *dto.ArtistCreate) (*model.Artist, dto.ErrorInterface) {
 
 	db := database.AppDatabase.BD
-
 	artist := model.Artist{
 		Name:     createArtist.Name,
 		Age:      createArtist.Age,
@@ -24,6 +23,7 @@ func (ar *ArtistRepository) Create(createArtist *dto.ArtistCreate) (*model.Artis
 		Password: createArtist.Password,
 	}
 
+	// todo definedAssociationFile сделать этот метод для всех репозиториев
 	files, err := ar.definedAssociationFile(*createArtist)
 	if err != nil {
 		return nil, err

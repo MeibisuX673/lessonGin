@@ -2,6 +2,7 @@ package fileController
 
 import (
 	dto "github.com/MeibisuX673/lessonGin/app/controller/model"
+	"github.com/MeibisuX673/lessonGin/app/service/audioService"
 	"github.com/MeibisuX673/lessonGin/app/service/fileService"
 	"github.com/MeibisuX673/lessonGin/app/service/queryService"
 	"github.com/gin-gonic/gin"
@@ -12,6 +13,7 @@ import (
 type FileController struct {
 	FileService  *fileService.FileService
 	QueryService *queryService.QueryService
+	AudioService *audioService.AudioService
 }
 
 // POSTFile   Create File
@@ -144,5 +146,42 @@ func (fl *FileController) DELETEFile(c *gin.Context) {
 	}
 
 	c.Status(http.StatusNoContent)
+
+}
+
+// GetBytesMusicById   Get Bytes
+//
+//	 @Summary		Get Bytes
+//		@Description	Get Bytes
+//		@Tags			files
+//		@Accept			json
+//		@Produce		json
+//		@Param id path int true "id"
+//		@Success		200	{object}	dto.BytesResponse
+//		@Failure		400	{object}	dto.Error
+//		@Failure		404	{object}	dto.Error
+//		@Failure		500	{object}	dto.Error
+//		@Router			/files/music-bytes/{id} [get]
+func (fl *FileController) GetBytesMusicById(c *gin.Context) {
+
+	id, err := strconv.Atoi(c.Param("id"))
+
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.Error{
+			Status:  http.StatusBadRequest,
+			Message: "id должно быть числом",
+		})
+		return
+	}
+
+	file, errFile := fl.FileService.GetFileById(uint(id))
+	if err != nil {
+		c.JSON(errFile.GetStatus(), errFile)
+		return
+	}
+
+	bytes := fl.AudioService.GetBytes(file.Name)
+
+	c.JSON(http.StatusOK, dto.BytesResponse{Bytes: bytes})
 
 }

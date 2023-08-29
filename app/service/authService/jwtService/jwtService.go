@@ -12,7 +12,7 @@ import (
 type JWTService struct {
 }
 
-func (jwts *JWTService) CreateJwtToken(artist model.Artist) (string, dto.ErrorInterface) {
+func (jwtS *JWTService) CreateJwtToken(artist model.Artist) (string, dto.ErrorInterface) {
 
 	token := jwt.New(jwt.SigningMethodHS256)
 

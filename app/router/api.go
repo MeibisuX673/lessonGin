@@ -6,12 +6,15 @@ import (
 	"github.com/MeibisuX673/lessonGin/app/controller/apiController/artistController"
 	"github.com/MeibisuX673/lessonGin/app/controller/apiController/authController"
 	"github.com/MeibisuX673/lessonGin/app/controller/apiController/fileController"
+	"github.com/MeibisuX673/lessonGin/app/controller/apiController/musicController"
 	"github.com/MeibisuX673/lessonGin/app/middleware"
 	"github.com/MeibisuX673/lessonGin/app/repository/mySql/album"
 	"github.com/MeibisuX673/lessonGin/app/repository/mySql/artist"
 	"github.com/MeibisuX673/lessonGin/app/repository/mySql/file"
+	"github.com/MeibisuX673/lessonGin/app/repository/mySql/music"
 	"github.com/MeibisuX673/lessonGin/app/service/albumService"
 	"github.com/MeibisuX673/lessonGin/app/service/artistService"
+	"github.com/MeibisuX673/lessonGin/app/service/audioService"
 	"github.com/MeibisuX673/lessonGin/app/service/authService"
 	"github.com/MeibisuX673/lessonGin/app/service/authService/jwtService"
 	"github.com/MeibisuX673/lessonGin/app/service/emailService"
@@ -36,6 +39,7 @@ func initApiRouter(ge *gin.Engine) {
 	initArtistRoutes(groupApi)
 	initAlbumRoutes(groupApi)
 	initFileRoutes(groupApi)
+	initMusicRoutes(groupApi)
 
 }
 
@@ -44,6 +48,16 @@ func initAuthRoutes(rg *gin.RouterGroup) {
 	auth := rg.Group("auth")
 	{
 		auth.POST("", controllers.AuthController.Auth)
+	}
+
+}
+
+func initMusicRoutes(rg *gin.RouterGroup) {
+
+	musics := rg.Group("musics")
+	{
+		musics.POST("", controllers.MusicController.PostMusic)
+		musics.GET("", controllers.MusicController.GetCollection)
 	}
 
 }
@@ -85,6 +99,7 @@ func initFileRoutes(rg *gin.RouterGroup) {
 		files.POST("", controllers.FileController.POSTFile)
 		files.GET("/:id", controllers.FileController.GETFileById)
 		files.GET("", controllers.FileController.GETFileCollection)
+		files.GET("/music-bytes/:id", controllers.FileController.GetBytesMusicById)
 		files.DELETE("/:id", controllers.FileController.DELETEFile)
 	}
 }
@@ -111,11 +126,19 @@ func initializationController() controller.Controller {
 		FileController: fileController.FileController{
 			FileService:  fileService.New(&file.FileRepository{}),
 			QueryService: queryService.New(),
+			AudioService: audioService.New(&music.MusicRepository{}),
 		},
 
 		AuthController: authController.AuthController{
 			AuthService: authService.New(&artist.ArtistRepository{}),
 			JWTService:  &jwtService.JWTService{},
+		},
+
+		MusicController: musicController.MusicController{
+			AudioService: audioService.New(&music.MusicRepository{}),
+			QueryService: queryService.New(),
+			AlbumService: albumService.New(&album.AlbumRepository{}),
+			FileService:  fileService.New(&file.FileRepository{}),
 		},
 	}
 }

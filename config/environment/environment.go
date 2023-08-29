@@ -4,7 +4,13 @@ import (
 	"github.com/joho/godotenv"
 )
 
-var Env *Environment
+var Env Environment
+
+func init() {
+	if err := Env.Init(); err != nil {
+		panic(err)
+	}
+}
 
 type Environment struct {
 	envMap map[string]string
@@ -17,7 +23,7 @@ func (e *Environment) Init() error {
 	}
 
 	env, _ := godotenv.Read(".env.local")
-	Env = &Environment{envMap: env}
+	e.envMap = env
 
 	return nil
 
@@ -36,7 +42,7 @@ func (e *Environment) InitForTest() error {
 	}
 
 	env, _ := godotenv.Read("./../.env.test")
-	Env = &Environment{envMap: env}
+	Env = Environment{envMap: env}
 
 	return nil
 

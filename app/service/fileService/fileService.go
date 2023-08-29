@@ -1,11 +1,12 @@
 package fileService
 
 import (
-	"errors"
 	"fmt"
 	dto "github.com/MeibisuX673/lessonGin/app/controller/model"
 	"github.com/MeibisuX673/lessonGin/app/model"
 	"github.com/MeibisuX673/lessonGin/app/repository"
+	"github.com/MeibisuX673/lessonGin/app/service/audioService"
+	"github.com/MeibisuX673/lessonGin/config/environment"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"net/http"
@@ -21,39 +22,83 @@ func New(fileRepository repository.FileRepositoryInterface) *FileService {
 	return &FileService{FileRepository: fileRepository}
 }
 
-var extensions []string = []string{
+func init() {
+	InitSaveByExt()
+}
+
+var converts = map[string]func(string) string{
+	".mp3": audioService.Mp3ConvertToWav,
+}
+
+var extensionsImage []string = []string{
 	".png",
 	".jpg",
 	".svg",
 }
 
-func (fs *FileService) UploadFile(c *gin.Context) (*model.File, error) {
+var extensionsMusic []string = []string{
+	".mp3",
+	".wav",
+}
+
+func GetMusicExtension() []string {
+	return extensionsMusic
+}
+
+var saveByExt = map[string][2]string{}
+
+func InitSaveByExt() {
+	for _, s := range extensionsImage {
+		saveByExt[s] = [2]string{
+			environment.Env.GetEnv("DIR_IMAGES"), environment.Env.GetEnv("IMAGE_URL"),
+		}
+	}
+	for _, s := range extensionsMusic {
+		saveByExt[s] = [2]string{
+			environment.Env.GetEnv("DIR_MUSIC"), environment.Env.GetEnv("MUSIC_URL"),
+		}
+	}
+}
+
+func (fs *FileService) UploadFile(c *gin.Context) (*model.File, dto.ErrorInterface) {
 
 	file, err := c.FormFile("file")
 
 	if err != nil {
-		return nil, err
+		return nil, &dto.Error{
+			Status:  http.StatusInternalServerError,
+			Message: "Internal server error",
+		}
 	}
 
 	extension := filepath.Ext(file.Filename)
 
-	if !checkExtension(extension) {
-		return nil, errors.New("Invalid file extension")
+	key, ok := saveByExt[extension]
+
+	if !ok {
+		return nil, &dto.Error{
+			Status:  http.StatusBadRequest,
+			Message: "invalid format",
+		}
 	}
 
 	newFileName := uuid.New().String() + extension
 
-	if err := c.SaveUploadedFile(file, "./assets/images/"+newFileName); err != nil {
-		return nil, err
+	dir := key[0] + "/" + newFileName
+	if err := c.SaveUploadedFile(file, dir); err != nil {
+		return nil, &dto.Error{
+			Status:  http.StatusInternalServerError,
+			Message: "Failed to save file",
+		}
+	}
+
+	if fun, ok := converts[extension]; ok {
+		newFileName = fun(newFileName)
 	}
 
 	newFile := model.File{
 		Name: newFileName,
-		Path: fmt.Sprintf(os.Getenv("IMAGE_URL"), newFileName),
-	}
-
-	if err != nil {
-		return nil, err
+		Path: fmt.Sprintf(key[1], newFileName),
 	}
 
 	return &newFile, nil
@@ -131,18 +176,6 @@ func (fs *FileService) GetBy(arguments map[string]interface{}) ([]dto.FileRespon
 	response := convertToFileResponseCollection(files)
 
 	return response, nil
-
-}
-
-func checkExtension(extension string) bool {
-
-	for _, value := range extensions {
-		if value == extension {
-			return true
-		}
-	}
-
-	return false
 
 }
 

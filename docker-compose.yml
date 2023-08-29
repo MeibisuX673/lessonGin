@@ -2,12 +2,15 @@ version: '3.9'
 
 services:
 
-  golang:
-    image: golang:alpine3.18
-    volumes:
-      - ./:/usr/src/myApp
-    working_dir:
-      /usr/src/myApp
+#  golang:
+#    image: golang:alpine3.18
+#    volumes:
+#      - ./:/usr/src/myApp
+#    working_dir:
+#      /usr/src/myApp
+#    entrypoint: go run main.go
+#    ports:
+#      - 8080:8080
 
   mysql:
     image: mysql:8.0
@@ -20,17 +23,6 @@ services:
       - 33061:3306
     restart: always
 
-#  mysql_test:
-#    image: mysql:8.0
-#    environment:
-#      - MYSQL_ROOT_PASSWORD=test
-#      - MYSQL_DATABASE=base_test
-#    volumes:
-#      - ./docker/database_test:/var/lib/mysql
-#    ports:
-#      - 33062:3306
-#    restart: always
-
   mailhog:
     container_name: mailhog
     image: mailhog/mailhog:latest
@@ -38,15 +30,5 @@ services:
     ports:
       - 2025:1025
       - 9025:8025
-#
-#  golang:
-#    build:
-#      context: ./
-#      dockerfile: ./DockerFile
-#    container_name: golang
-#    volumes:
-#      - ./:/usr/src/app
-#    ports:
-#      - 8081:8081
-#    restart: always
+
 

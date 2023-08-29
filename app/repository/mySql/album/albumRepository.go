@@ -16,7 +16,7 @@ func (ar *AlbumRepository) Create(albumCreate dto.AlbumCreate) (*model.Album, dt
 
 	db := database.AppDatabase.BD
 
-	file, err := ar.definedAssociationFile(*albumCreate.FileId)
+	file, err := helper.DefinedAssociationFile(*albumCreate.FileId)
 	if err != nil {
 		return nil, err
 	}
@@ -174,24 +174,4 @@ func (ar *AlbumRepository) Delete(id uint) dto.ErrorInterface {
 
 	return nil
 
-}
-
-func (ar *AlbumRepository) definedAssociationFile(id uint) (*model.File, dto.ErrorInterface) {
-
-	db := database.AppDatabase.BD
-
-	var file model.File
-
-	if err := db.First(&file, id).Error; err != nil {
-		return nil, &dto.Error{
-			Status:  http.StatusInternalServerError,
-			Message: err.Error(),
-		}
-	}
-
-	if file.AlbumID != nil || file.ArtistID != nil {
-		return nil, nil
-	}
-
-	return &file, nil
 }

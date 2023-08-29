@@ -1,0 +1,30 @@
+version: '3.9'
+
+services:
+
+  golang_test:
+    image: golang:alpine3.18
+    container_name: golang_test
+    networks:
+      - test
+    volumes:
+      - ./:/usr/src/myApp
+    working_dir:
+      /usr/src/myApp
+    depends_on:
+      - mysql_test
+    entrypoint: go test ./tests
+
+  mysql_test:
+    image: mysql:8.0
+    container_name: mysql_test
+    networks:
+      - test
+    environment:
+      - MYSQL_ROOT_PASSWORD=test
+      - MYSQL_DATABASE=base_test
+    restart: always
+
+networks:
+    test:
+      name: test_api

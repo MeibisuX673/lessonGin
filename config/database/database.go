@@ -53,4 +53,8 @@ func (db *Database) migrations() {
 		panic(err.Error())
 	}
 
+	if err := db.BD.AutoMigrate(&model.Music{}); err != nil {
+		panic(err.Error())
+	}
+
 }

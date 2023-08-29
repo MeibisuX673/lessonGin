@@ -6,4 +6,5 @@ type File struct {
 	Name      string `gorm:"varchar(255)"`
 	ArtistID  *uint
 	AlbumID   *uint
+	MusicID   *uint
 }
