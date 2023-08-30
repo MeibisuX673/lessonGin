@@ -5,7 +5,7 @@
 
 Скопировать .env в .env.local
 
-### Заппуск проекта
+### Запуск проекта
 ``docker-compose up -d``\
 ``$ go run main.go``
 
