@@ -6,24 +6,19 @@ import (
 
 var Env Environment
 
-func init() {
-	if err := Env.Init(); err != nil {
-		panic(err)
-	}
-}
-
 type Environment struct {
 	envMap map[string]string
 }
 
-func (e *Environment) Init() error {
+func Init() error {
 
 	if err := godotenv.Load(".env.local"); err != nil {
 		return err
 	}
 
 	env, _ := godotenv.Read(".env.local")
-	e.envMap = env
+
+	Env = Environment{envMap: env}
 
 	return nil
 

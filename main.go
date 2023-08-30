@@ -22,7 +22,7 @@ import (
 // @externalDocs.description  OpenAPI
 // @externalDocs.url          https://swagger.io/resources/open-api/
 func main() {
-	if err := environment.Env.Init(); err != nil {
+	if err := environment.Init(); err != nil {
 		panic(err.Error())
 	}
 	if _, err := database.AppDatabase.Init(); err != nil {
