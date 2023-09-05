@@ -12,7 +12,7 @@ type AlbumResponse struct {
 	Title    string        `json:"title"`
 	Price    float64       `json:"price"`
 	ArtistID uint          `json:"artistID"`
-	File     *FileResponse `json:"file"`
+	File     *FileResponse `json:"file,omitempty"`
 }
 
 type UpdateAlbum struct {

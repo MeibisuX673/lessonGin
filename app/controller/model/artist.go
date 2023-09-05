@@ -12,8 +12,8 @@ type ArtistResponse struct {
 	ID     uint            `json:"id"`
 	Name   string          `json:"name"`
 	Age    uint            `json:"age"`
-	Files  []FileResponse  `json:"files"`
-	Albums []AlbumResponse `json:"albums"`
+	Files  []FileResponse  `json:"files,omitempty"`
+	Albums []AlbumResponse `json:"albums,omitempty"`
 }
 
 type UpdateArtist struct {
