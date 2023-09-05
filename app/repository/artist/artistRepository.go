@@ -4,7 +4,7 @@ import (
 	"context"
 	dto "github.com/MeibisuX673/lessonGin/app/controller/model"
 	"github.com/MeibisuX673/lessonGin/app/model"
-	"github.com/MeibisuX673/lessonGin/app/repository/mySql/helper"
+	"github.com/MeibisuX673/lessonGin/app/repository/helper"
 	"github.com/MeibisuX673/lessonGin/config/database"
 	"gorm.io/gorm/clause"
 	"net/http"
