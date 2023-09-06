@@ -2,11 +2,9 @@ package emailService
 
 import (
 	"bytes"
-	"fmt"
 	"github.com/MeibisuX673/lessonGin/config/environment"
 	"gopkg.in/gomail.v2"
 	"os"
-	"reflect"
 	"strconv"
 )
 
@@ -24,7 +22,6 @@ func (es *EmailService) SendRegistration(toEmail string) {
 
 	smtpHost := environment.Env.GetEnv("SMTP_HOST")
 	smtpPort := environment.Env.GetEnv("SMTP_PORT")
-	fmt.Println(reflect.TypeOf(password))
 
 	port, err := strconv.Atoi(smtpPort)
 	if err != nil {

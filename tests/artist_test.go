@@ -9,6 +9,7 @@ import (
 	"github.com/MeibisuX673/lessonGin/tests/factories"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/assert/v2"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -17,7 +18,35 @@ import (
 )
 
 var rout *gin.Engine
-var db *database.Database
+var bdPath = "./store.db"
+
+func clean() {
+
+	if err := os.Remove(bdPath); err != nil {
+		log.Fatal(err)
+	}
+
+	file, err := os.Create(bdPath)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer file.Close()
+
+	err = os.Chmod(bdPath, 0777)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	initDb()
+
+}
+
+func initDb() {
+	var errConnectDb error
+	if _, errConnectDb = database.AppDatabase.Init(); errConnectDb != nil {
+		panic(errConnectDb.Error())
+	}
+}
 
 func TestMain(m *testing.M) {
 
@@ -25,11 +54,9 @@ func TestMain(m *testing.M) {
 		panic(err.Error())
 	}
 
-	var errDb error
-	db, errDb = database.AppDatabase.Init()
-	if errDb != nil {
-		panic(errDb.Error())
-	}
+	initDb()
+
+	_ = router.AppRouter()
 
 	factories.InitializationFactory()
 
@@ -39,20 +66,12 @@ func TestMain(m *testing.M) {
 
 }
 
-func clean() {
-
-}
-
 func TestCreateArtist(t *testing.T) {
 
-	t.Cleanup(clean)
-
 	expectation := dto.ArtistResponse{
-		ID:     1,
-		Name:   "Meibisu",
-		Age:    120,
-		Files:  nil,
-		Albums: nil,
+		ID:   1,
+		Name: "Meibisu",
+		Age:  120,
 	}
 
 	//tx := db.BD.Begin()
@@ -64,17 +83,17 @@ func TestCreateArtist(t *testing.T) {
 	//tx.Commit()
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("POST", "/api/artists", strings.NewReader("{\n  \"age\": 120,\n  \"email\": \"fomesid424@royalka.com\",\n  \"name\": \"Meibisu\",\n  \"password\": \"test\"\n}"))
-	//req, _ := http.NewRequest("GET", fmt.Sprintf("/api/artists/%d", artist.ID), nil)
+	req, _ := http.NewRequest("POST", "/api/artists", strings.NewReader("{\n  \"age\": 120,\n  \"email\": \"test@test.com\",\n  \"name\": \"Meibisu\",\n  \"password\": \"test\"\n}"))
 	rout.ServeHTTP(w, req)
 
 	var response dto.ArtistResponse
 
 	bytes := w.Body.Bytes()
 	json.Unmarshal(bytes, &response)
-	//json.NewDecoder(req.Body).Decode(&response)
 
 	assert.Equal(t, 201, w.Code)
 	assert.Equal(t, response, expectation)
+
+	t.Cleanup(clean)
 
 }

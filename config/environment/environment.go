@@ -6,12 +6,6 @@ import (
 
 var Env Environment
 
-func init() {
-	if err := Env.Init(); err != nil {
-		panic(err)
-	}
-}
-
 type Environment struct {
 	envMap map[string]string
 }

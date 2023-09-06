@@ -4,6 +4,7 @@ import (
 	"github.com/MeibisuX673/lessonGin/app/model"
 	"github.com/MeibisuX673/lessonGin/config/environment"
 	"gorm.io/driver/mysql"
+	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
 
@@ -14,6 +15,15 @@ type Database struct {
 }
 
 func (db *Database) Init() (*Database, error) {
+
+	if environment.Env.GetEnv("MODE") == "test" {
+		err := db.dbSqliteInit()
+		if err != nil {
+			return nil, err
+		}
+		db.migrations()
+		return db, nil
+	}
 
 	err := db.dbMysqlInit()
 	if err != nil {
@@ -31,6 +41,19 @@ func (db *Database) dbMysqlInit() error {
 	var err error
 
 	db.BD, err = gorm.Open(mysql.Open(environment.Env.GetEnv("DATABASE_URL")), &gorm.Config{})
+	if err != nil {
+		return err
+	}
+
+	return nil
+
+}
+
+func (db *Database) dbSqliteInit() error {
+
+	var err error
+
+	db.BD, err = gorm.Open(sqlite.Open("./store.db"))
 	if err != nil {
 		return err
 	}
