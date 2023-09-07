@@ -60,9 +60,10 @@ func ConvertToOneArtistResponse(artist model.Artist) (responseArtist dto.ArtistR
 	if artist.Albums != nil {
 		for _, album := range artist.Albums {
 			responseAlbum = append(responseAlbum, dto.AlbumResponse{
-				Id:    album.ID,
-				Title: album.Title,
-				Price: album.Price,
+				Id:       album.ID,
+				Title:    album.Title,
+				Price:    album.Price,
+				ArtistID: artist.ID,
 			})
 		}
 	}

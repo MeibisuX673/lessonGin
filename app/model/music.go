@@ -3,7 +3,7 @@ package model
 type Music struct {
 	BaseModel `gorm:"embedded"`
 	Name      string `gorm:"varchar(255)"`
-	ArtisID   uint
+	ArtistID  uint
 	AlbumID   uint
 	File      File
 }

@@ -23,8 +23,6 @@ func (qs *QueryService) GetQueries(c *gin.Context) *model.Query {
 
 	replacer := strings.NewReplacer("[", " ", "]", " ")
 
-	fmt.Println(queries)
-
 	query.Page = 1
 	value, ok := queries["page"]
 	if ok {
@@ -50,8 +48,6 @@ func (qs *QueryService) GetQueries(c *gin.Context) *model.Query {
 		rangeFilter := ""
 
 		queryData := strings.Fields(replacer.Replace(key))
-		fmt.Println(queryData)
-		fmt.Println(value)
 
 		switch queryData[0] {
 		case "filter":

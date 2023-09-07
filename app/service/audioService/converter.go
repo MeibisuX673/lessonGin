@@ -12,7 +12,7 @@ func convertToMusicResponseCollection(musics []model.Music) (responseMusics []dt
 		responseMusics = append(responseMusics, dto.MusicResponse{
 			ID:       music.ID,
 			Name:     music.Name,
-			ArtistID: music.ArtisID,
+			ArtistID: music.ArtistID,
 			AlbumID:  music.AlbumID,
 			File: dto.FileResponse{
 				ID:   music.ID,

@@ -36,7 +36,7 @@ type FileRepositoryInterface interface {
 
 type MusicRepositoryInterface interface {
 	Create(music *dto.MusicCreate) (*model.Music, dto.ErrorInterface)
-	Update(id uint, artistUpdate map[string]interface{}) (*model.Music, dto.ErrorInterface)
+	Update(id uint, musicUpdate map[string]interface{}) (*model.Music, dto.ErrorInterface)
 	GetAll(query model.Query) ([]model.Music, dto.ErrorInterface)
 	GetById(id uint) (*model.Music, dto.ErrorInterface)
 	FindOneBy(map[string]interface{}) (*model.Music, dto.ErrorInterface)

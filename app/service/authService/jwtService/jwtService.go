@@ -3,9 +3,9 @@ package jwtService
 import (
 	dto "github.com/MeibisuX673/lessonGin/app/controller/model"
 	"github.com/MeibisuX673/lessonGin/app/model"
+	"github.com/MeibisuX673/lessonGin/config/environment"
 	"github.com/dgrijalva/jwt-go"
 	"net/http"
-	"os"
 	"time"
 )
 
@@ -21,7 +21,7 @@ func (jwtS *JWTService) CreateJwtToken(artist model.Artist) (string, dto.ErrorIn
 	claims["exp"] = time.Now().Add(time.Hour).Unix()
 	claims["sub"] = artist.ID
 
-	tokenStr, err := token.SignedString([]byte(os.Getenv("SECRET")))
+	tokenStr, err := token.SignedString([]byte(environment.Env.GetEnv("SECRET")))
 	if err != nil {
 		return "", &dto.Error{
 			Status:  http.StatusInternalServerError,

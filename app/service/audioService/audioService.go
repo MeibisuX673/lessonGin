@@ -2,15 +2,18 @@ package audioService
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
 	dto "github.com/MeibisuX673/lessonGin/app/controller/model"
 	"github.com/MeibisuX673/lessonGin/app/model"
 	"github.com/MeibisuX673/lessonGin/app/repository"
+	"github.com/MeibisuX673/lessonGin/app/service/helper"
 	"github.com/MeibisuX673/lessonGin/config/environment"
 	"github.com/Vernacular-ai/godub"
 	audio "github.com/Vernacular-ai/godub/converter"
 	"io"
 	"log"
+	"net/http"
 	"os"
 	"path"
 	"regexp"
@@ -84,7 +87,7 @@ func (as *AudioService) CreateMusic(musicCreate dto.MusicCreate) (*dto.MusicResp
 	//todo converter
 	result := &dto.MusicResponse{
 		Name:     music.Name,
-		ArtistID: music.ArtisID,
+		ArtistID: music.ArtistID,
 		AlbumID:  music.AlbumID,
 		File: dto.FileResponse{
 			ID:   music.File.ID,
@@ -110,30 +113,72 @@ func (as *AudioService) GetCollectionMusic(query model.Query) ([]dto.MusicRespon
 
 }
 
-//func (as *AudioService) GetMusicById(id uint) (*dto.MusicResponse, dto.ErrorInterface) {
-//
-//	db := database.AppDatabase.BD
-//
-//	var musics model.File
-//
-//	result := db.Preload(clause.Associations).First(&musics, id)
-//	if result.RowsAffected == 0 {
-//		return nil, &dto.Error{
-//			Status:  http.StatusNotFound,
-//			Message: "Файл не найден",
-//		}
-//	}
-//
-//	bytes := as.getBytes(musics.Name)
-//	//todo converter
-//	response := dto.MusicResponse{
-//		Name:        musics.Name,
-//		Bytes:       bytes,
-//		ArtistID:    musics.ArtistID,
-//		AlbumID:     musics.AlbumID,
-//		MusicFileID: musics.ID,
-//	}
-//
-//	return &response, nil
-//
-//}
+func (as *AudioService) GetMusicById(id uint) (*dto.MusicResponse, dto.ErrorInterface) {
+
+	music, err := as.MusicRepository.GetById(id)
+	if err != nil {
+		return nil, err
+	}
+
+	//todo converter
+	response := dto.MusicResponse{
+		ID:       music.ID,
+		Name:     music.Name,
+		ArtistID: music.ArtistID,
+		AlbumID:  music.AlbumID,
+		File: dto.FileResponse{
+			ID:   music.File.ID,
+			Name: music.File.Name,
+			Path: music.File.Path,
+		},
+	}
+
+	return &response, nil
+
+}
+
+func (as *AudioService) UpdateMusic(id uint, updateMusic dto.MusicUpdate) (*dto.MusicResponse, dto.ErrorInterface) {
+
+	var musicUpdateMap map[string]interface{}
+
+	updateArtistByte, _ := json.Marshal(updateMusic)
+
+	if err := json.Unmarshal(updateArtistByte, &musicUpdateMap); err != nil {
+		return nil, &dto.Error{
+			Status:  http.StatusInternalServerError,
+			Message: err.Error(),
+		}
+	}
+
+	sortMap := helper.CheckNil(musicUpdateMap)
+
+	music, err := as.MusicRepository.Update(id, sortMap)
+	if err != nil {
+		return nil, err
+	}
+
+	response := dto.MusicResponse{
+		Name:     music.Name,
+		ArtistID: music.ArtistID,
+		AlbumID:  music.AlbumID,
+		File: dto.FileResponse{
+			ID:   music.File.ID,
+			Name: music.File.Name,
+			Path: music.File.Path,
+		},
+	}
+
+	return &response, nil
+
+}
+
+func (as *AudioService) DeleteMusic(id uint) dto.ErrorInterface {
+
+	err := as.MusicRepository.Delete(id)
+	if err != nil {
+		return err
+	}
+
+	return nil
+
+}

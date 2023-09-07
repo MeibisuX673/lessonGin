@@ -15,3 +15,7 @@ type MusicCreate struct {
 	AlbumID  uint   `json:"albumID" validate:"required"`
 	FileID   uint   `json:"musicFileID" validate:"required"`
 }
+
+type MusicUpdate struct {
+	Name string `json:"name"`
+}
