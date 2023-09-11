@@ -6,6 +6,7 @@ import (
 	dto "github.com/MeibisuX673/lessonGin/app/controller/model"
 	"github.com/MeibisuX673/lessonGin/app/model"
 	"github.com/MeibisuX673/lessonGin/app/repository"
+	"github.com/MeibisuX673/lessonGin/app/service/helper"
 	"net/http"
 )
 
@@ -97,7 +98,7 @@ func (as *ArtistService) UpdateArtist(id uint, updateArtist dto.UpdateArtist) (*
 		}
 	}
 
-	sortMap := checkNil(artistUpdateMap)
+	sortMap := helper.CheckNil(artistUpdateMap)
 
 	artist, err := as.ArtistRepository.Update(id, sortMap)
 	if err != nil {
@@ -126,19 +127,5 @@ func (as *ArtistService) DeleteArtist(id uint) dto.ErrorInterface {
 	}
 
 	return nil
-
-}
-
-func checkNil(args map[string]interface{}) map[string]interface{} {
-
-	sortNil := make(map[string]interface{})
-
-	for key, value := range args {
-		if value != nil {
-			sortNil[key] = value
-		}
-	}
-
-	return sortNil
 
 }

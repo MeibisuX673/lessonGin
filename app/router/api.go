@@ -56,8 +56,10 @@ func initMusicRoutes(rg *gin.RouterGroup) {
 
 	musics := rg.Group("musics")
 	{
-		musics.POST("", controllers.MusicController.PostMusic)
+		musics.POST("", middleware.JwtMiddleware, controllers.MusicController.PostMusic)
 		musics.GET("", controllers.MusicController.GetCollection)
+		musics.GET("/:id", controllers.MusicController.GetMusicById)
+		musics.PUT("/:id", middleware.JwtMiddleware, controllers.MusicController.PUTMusic)
 	}
 
 }

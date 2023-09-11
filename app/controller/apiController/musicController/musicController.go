@@ -10,7 +10,9 @@ import (
 	"github.com/MeibisuX673/lessonGin/pkg/slices"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"log"
 	"net/http"
+	"strconv"
 	"strings"
 )
 
@@ -34,32 +36,33 @@ type MusicController struct {
 //		@Failure		404	{object}	dto.Error
 //		@Failure		500	{object}	dto.Error
 //		@Router			/musics/{id} [get]
-//func (mc *MusicController) GetMusicById(c *gin.Context) {
-//
-//	id, err := strconv.Atoi(c.Param("id"))
-//
-//	if err != nil {
-//		c.JSON(http.StatusBadRequest, dto.Error{
-//			Status:  http.StatusBadRequest,
-//			Message: "id должно быть числом",
-//		})
-//		return
-//	}
-//
-//	result, errMusic := mc.AudioService.GetMusicById(uint(id))
-//	if err != nil {
-//		c.JSON(errMusic.GetStatus(), errMusic)
-//		return
-//	}
-//
-//	c.JSON(http.StatusOK, result)
-//
-//}
+func (mc *MusicController) GetMusicById(c *gin.Context) {
+
+	id, err := strconv.Atoi(c.Param("id"))
+
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.Error{
+			Status:  http.StatusBadRequest,
+			Message: "id должно быть числом",
+		})
+		return
+	}
+
+	result, errMusic := mc.AudioService.GetMusicById(uint(id))
+	if err != nil {
+		c.JSON(errMusic.GetStatus(), errMusic)
+		return
+	}
+
+	c.JSON(http.StatusOK, result)
+
+}
 
 // PostMusic  Post Music
 //
 //	 @Summary		Post Music
 //		@Description	Post Music
+//		@Security ApiKeyAuth
 //		@Tags			musics
 //		@Accept			json
 //		@Produce		json
@@ -106,13 +109,13 @@ func (mc *MusicController) PostMusic(c *gin.Context) {
 		return
 	}
 
-	i := make([]interface{}, len(currentUser.Albums))
+	userAlbums := make([]interface{}, len(currentUser.Albums))
 
 	for k, v := range currentUser.Albums {
-		i[k] = v
+		userAlbums[k] = v
 	}
 
-	if !slices.Contains(i, album) {
+	if !slices.Contains(userAlbums, *album) {
 		c.JSON(http.StatusForbidden, dto.Error{
 			Status:  http.StatusForbidden,
 			Message: "Access Denied",
@@ -171,5 +174,115 @@ func (mc *MusicController) GetCollection(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, albums)
+
+}
+
+// PUTMusic  Put Music
+//
+//		@Summary		Put Music
+//		@Description	 Put Music
+//	 @Security ApiKeyAuth
+//		@Tags			musics
+//				@param id path int true "id"
+//			    @param body body dto.MusicUpdate true "body"
+//		@Accept			json
+//		@Produce		json
+//		@Success		200	{array}	    dto.MusicResponse
+//		@Failure		500	{object}	dto.Error
+//		@Failure		404	{object}	dto.Error
+//		@Failure		403 {object}	dto.Error
+//		@Router			/musics/{id} [put]
+func (mc *MusicController) PUTMusic(c *gin.Context) {
+
+	id, err := strconv.Atoi(c.Param("id"))
+
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.Error{
+			Status:  http.StatusBadRequest,
+			Message: "id должно быть числом",
+		})
+		return
+	}
+
+	music, err := mc.AudioService.GetMusicById(uint(id))
+	if err != nil {
+		c.JSON(http.StatusNotFound, err)
+		return
+	}
+
+	currentArtist := securityService.GetCurrentUser(c)
+	// todo не присваивается id артиста
+	log.Fatal(music.ArtistID, "\n", currentArtist)
+
+	if currentArtist.ID != music.ArtistID {
+		c.JSON(http.StatusForbidden, dto.Error{
+			Status:  http.StatusForbidden,
+			Message: "Access Denied",
+		})
+		return
+	}
+
+	var updateMusic dto.MusicUpdate
+
+	if err := c.BindJSON(&updateMusic); err != nil {
+		c.JSON(http.StatusBadRequest, dto.Error{
+			Status:  http.StatusBadRequest,
+			Message: err.Error(),
+		})
+		return
+	}
+
+	artist, errUpdateArtist := mc.AudioService.UpdateMusic(uint(id), updateMusic)
+	if errUpdateArtist != nil {
+		c.JSON(errUpdateArtist.GetStatus(), errUpdateArtist)
+		return
+	}
+
+	c.JSON(http.StatusOK, artist)
+
+}
+
+// DELETEMusic Delete Music
+//
+//		    @Summary		Delete Music
+//	     @security ApiKeyAuth
+//			@Description	 Delete Music
+//			@Tags			musics
+//			@Accept			json
+//			@Produce		json
+//			@param id path int true "id"
+//			@Success		204
+//			@Failure		400	{object}	dto.Error
+//			@Failure		404	{object}	dto.Error
+//			@Failure		403	{object}	dto.Error
+//			@Failure		500	{object}	dto.Error
+//			@Router			/musics/{id} [delete]
+func (mc *MusicController) DELETEMusic(c *gin.Context) {
+
+	id, err := strconv.Atoi(c.Param("id"))
+
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.Error{
+			Status:  http.StatusBadRequest,
+			Message: "id должно быть числом",
+		})
+		return
+	}
+
+	music, err := mc.AudioService.GetMusicById(uint(id))
+	if err != nil {
+		c.JSON(http.StatusNotFound, err)
+		return
+	}
+
+	currentArtist := securityService.GetCurrentUser(c)
+
+	if currentArtist.ID != music.ArtistID {
+		c.JSON(http.StatusForbidden, dto.Error{
+			Status:  http.StatusForbidden,
+			Message: "Access Denied",
+		})
+		return
+	}
 
 }

@@ -12,7 +12,7 @@ import (
 type MusicRepository struct {
 }
 
-func (m MusicRepository) Create(musicCreate *dto.MusicCreate) (*model.Music, dto.ErrorInterface) {
+func (mr MusicRepository) Create(musicCreate *dto.MusicCreate) (*model.Music, dto.ErrorInterface) {
 
 	file, err := helper.DefinedAssociationFile(musicCreate.FileID)
 	if err != nil {
@@ -22,10 +22,10 @@ func (m MusicRepository) Create(musicCreate *dto.MusicCreate) (*model.Music, dto
 	db := database.AppDatabase.BD
 
 	var music model.Music = model.Music{
-		Name:    musicCreate.Name,
-		ArtisID: musicCreate.ArtistID,
-		AlbumID: musicCreate.AlbumID,
-		File:    *file,
+		Name:     musicCreate.Name,
+		ArtistID: musicCreate.ArtistID,
+		AlbumID:  musicCreate.AlbumID,
+		File:     *file,
 	}
 
 	result := db.Create(&music)
@@ -41,21 +41,45 @@ func (m MusicRepository) Create(musicCreate *dto.MusicCreate) (*model.Music, dto
 
 }
 
-func (m MusicRepository) Update(id uint, artistUpdate map[string]interface{}) (*model.Music, dto.ErrorInterface) {
-	//TODO implement me
-	panic("implement me")
-}
+func (mr MusicRepository) Update(id uint, musicUpdate map[string]interface{}) (*model.Music, dto.ErrorInterface) {
 
-func (m MusicRepository) GetAll(query model.Query) ([]model.Music, dto.ErrorInterface) {
+	var music model.Music
 
 	db := database.AppDatabase.BD
 
-	var musics []model.Music
+	if count := db.Preload(clause.Associations).First(&music, id).RowsAffected; count == 0 {
+		return nil, &dto.Error{
+			Status:  http.StatusNotFound,
+			Message: "Трек не найден",
+		}
+	}
 
-	if err := db.Preload(clause.Associations).Find(&musics).Error; err != nil {
+	if err := db.Model(&music).Updates(musicUpdate).Error; err != nil {
 		return nil, &dto.Error{
 			Status:  http.StatusInternalServerError,
 			Message: err.Error(),
+		}
+	}
+
+	return &music, nil
+}
+
+func (mr MusicRepository) GetAll(query model.Query) ([]model.Music, dto.ErrorInterface) {
+
+	var musics []model.Music
+
+	db := database.AppDatabase.BD
+
+	result := db.Preload(clause.Associations)
+
+	helper.ConfigurationDbQuery(result, query)
+
+	result.Find(&musics)
+
+	if result.Error != nil {
+		return nil, &dto.Error{
+			Status:  http.StatusInternalServerError,
+			Message: result.Error.Error(),
 		}
 	}
 
@@ -63,22 +87,75 @@ func (m MusicRepository) GetAll(query model.Query) ([]model.Music, dto.ErrorInte
 
 }
 
-func (m MusicRepository) GetById(id uint) (*model.Music, dto.ErrorInterface) {
-	//TODO implement me
-	panic("implement me")
+func (mr MusicRepository) GetById(id uint) (*model.Music, dto.ErrorInterface) {
+
+	db := database.AppDatabase.BD
+
+	var music model.Music
+
+	if err := db.Preload(clause.Associations).First(&music, id).Error; err != nil {
+		return nil, &dto.Error{
+			Status:  http.StatusNotFound,
+			Message: "Тррек не найден",
+		}
+	}
+
+	return &music, nil
+
 }
 
-func (m MusicRepository) FindOneBy(m2 map[string]interface{}) (*model.Music, dto.ErrorInterface) {
-	//TODO implement me
-	panic("implement me")
+func (mr MusicRepository) FindOneBy(m map[string]interface{}) (*model.Music, dto.ErrorInterface) {
+
+	db := database.AppDatabase.BD
+
+	var music model.Music
+
+	if err := db.Model(&music).Find(m).Error; err != nil {
+		return nil, &dto.Error{
+			Status:  http.StatusInternalServerError,
+			Message: err.Error(),
+		}
+	}
+
+	return &music, nil
 }
 
-func (m MusicRepository) FindBy(m2 map[string]interface{}) ([]model.Music, dto.ErrorInterface) {
-	//TODO implement me
-	panic("implement me")
+func (mr MusicRepository) FindBy(m map[string]interface{}) ([]model.Music, dto.ErrorInterface) {
+
+	db := database.AppDatabase.BD
+
+	var music []model.Music
+
+	if err := db.Model(&music).Find(m).Error; err != nil {
+		return nil, &dto.Error{
+			Status:  http.StatusInternalServerError,
+			Message: err.Error(),
+		}
+	}
+
+	return music, nil
+
 }
 
-func (m MusicRepository) Delete(id uint) dto.ErrorInterface {
-	//TODO implement me
-	panic("implement me")
+func (mr MusicRepository) Delete(id uint) dto.ErrorInterface {
+
+	db := database.AppDatabase.BD
+
+	var music model.Music
+
+	if count := db.First(&music, id).RowsAffected; count == 0 {
+		return &dto.Error{
+			Status:  http.StatusNotFound,
+			Message: "Файл не найден",
+		}
+	}
+
+	if err := db.Unscoped().Delete(&music).Error; err != nil {
+		return &dto.Error{
+			Status:  http.StatusInternalServerError,
+			Message: err.Error(),
+		}
+	}
+
+	return nil
 }
